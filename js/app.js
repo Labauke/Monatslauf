@@ -229,15 +229,17 @@ function renderTrack() {
     let acc = 0; const stops = r.segs.map(s => { const a = acc / (r.total || 1) * 100; acc += s.pts; return `${SPORT[s.sport]?.color || '#fff'} ${a}% ${acc / (r.total || 1) * 100}%`; });
     el.querySelector('.trail').style.background = stops.length ? `linear-gradient(90deg,${stops.join(',')})` : 'transparent';
     const run = el.querySelector('.run');
-    if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => run.style.setProperty('--p', p)));
-    else run.style.setProperty('--p', p);
     box.appendChild(el);
+    if (fresh) void run.offsetWidth; // Startposition festhalten, damit die Figur vom Start losläuft
+    run.style.setProperty('--p', p);
   });
-  if (!REDUCED) for (const [id, el] of laneEls) {
+  if (!REDUCED && box.animate) for (const [id, el] of laneEls) {
     const old = before.get(id); if (old == null) continue;
-    const d = old - el.getBoundingClientRect().top; if (!d) continue;
-    el.style.transition = 'none'; el.style.transform = `translateY(${d}px)`; el.style.zIndex = d > 0 ? 2 : 1;
-    requestAnimationFrame(() => { el.style.transition = 'transform 700ms cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; setTimeout(() => el.style.zIndex = '', 750); });
+    const d = Math.round(old - el.getBoundingClientRect().top); if (!d) continue;
+    el.getAnimations().forEach(a => a.cancel());
+    el.style.zIndex = d > 0 ? 2 : 1;
+    el.animate([{ transform: `translateY(${d}px)` }, { transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.2,.8,.2,1)' })
+      .finished.catch(() => {}).then(() => { el.style.zIndex = ''; });
   }
   const used = SPORTS.filter(s => rows.some(r => r.segs.some(g => g.sport === s.id)));
   $('#legendRow').innerHTML = rows.length ? `<span>Spuren:</span>${used.map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('')}` : '';
