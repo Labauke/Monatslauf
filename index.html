@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monatslauf</title>
+<meta name="description" content="Wer bewegt sich diesen Monat am meisten? Trainings eintragen, Punkte sammeln und die eigene Figur nach vorne laufen lassen.">
+<meta name="theme-color" content="#2451B8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Monatslauf">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Monatslauf</h1>
+      <p>Wer bewegt sich diesen Monat am meisten? Jedes Training bringt Punkte und deine Figur weiter nach vorn.</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="stadium" id="ceremony" hidden aria-label="Siegerehrung"></section>
+
+  <div class="monthbar">
+    <div class="monthnav">
+      <button class="iconbtn" id="prevM" aria-label="Vorheriger Monat">‹</button>
+      <h2 id="monthTitle">–</h2>
+      <button class="iconbtn" id="nextM" aria-label="Nächster Monat">›</button>
+    </div>
+    <div id="deadline"></div>
+  </div>
+
+  <section class="stadium" id="stadium" aria-label="Rennbahn">
+    <div class="scale" id="scale"><span>Start</span><span>Spitze</span></div>
+    <div class="lanes" id="lanes"></div>
+    <div id="podium" hidden></div>
+    <div class="legend-row" id="legendRow"></div>
+    <p class="stadium-note" id="stadiumNote"></p>
+  </section>
+
+  <div class="grid">
+    <div class="card" id="entryCard"></div>
+    <div class="side">
+      <div class="card">
+        <h3>Letzte Einträge</h3>
+        <ul class="feed" id="feed"></ul>
+      </div>
+      <div class="card">
+        <h3>Siegerliste</h3>
+        <ul class="hall" id="hall"></ul>
+        <p class="legend">Monatssiege schalten Teile im Figuren-Baukasten frei: 1 Sieg bringt Pilotenbrille und goldene Schuhe, 2 Siege Umhang und Medaille, ab 3 Siegen die Krone.</p>
+      </div>
+      <div class="card" id="inviteCard">
+        <h3>Aufs Handy holen</h3>
+        <div class="invite">
+          <div id="qr" role="img" aria-label="QR-Code mit dem Link zum Monatslauf"></div>
+          <div class="invite-actions">
+            <p class="summary">Scanne den Code mit der Handykamera oder schick den Link an deine Leute. Auf dem Handy lässt sich der Monatslauf wie eine App installieren.</p>
+            <button class="secondary" id="shareBtn">Link teilen</button>
+            <button class="secondary" id="installBtn" hidden>Als App installieren</button>
+            <p class="ios-hint" id="iosHint" hidden>Auf dem iPhone: in Safari unten auf „Teilen“ tippen und dann „Zum Home-Bildschirm“ wählen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<button class="fab" id="fab" hidden>Training eintragen</button>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="js/config.js"></script>
+<script src="js/figure.js"></script>
+<script src="js/store.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>

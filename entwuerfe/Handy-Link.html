@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monatslauf aufs Handy</title>
+<style>
+  body{margin:0;background:#EEF2F7;color:#101B33;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;box-sizing:border-box}
+  main{background:#fff;border:1px solid #D5DCE7;border-radius:20px;padding:28px;max-width:420px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;box-shadow:0 10px 30px rgba(16,27,51,.1)}
+  h1{margin:0;font-size:30px;letter-spacing:.02em;text-transform:uppercase}
+  p{margin:0;color:#566380;line-height:1.5}
+  #qr{padding:12px;background:#fff;border-radius:12px;border:1px solid #D5DCE7}
+  a{color:#2451B8;font-weight:600;word-break:break-all}
+  ol{margin:0;padding-left:20px;text-align:left;color:#566380;line-height:1.6}
+</style>
+</head>
+<body>
+<main>
+  <h1>Monatslauf</h1>
+  <p>Scanne den Code mit der Handykamera, um den Monatslauf zu öffnen.</p>
+  <div id="qr" aria-label="QR-Code zum Monatslauf"></div>
+  <a id="link" href="https://claude.ai/artifact/8NC9zzHYXWaptZxjEvZYLe">https://claude.ai/artifact/8NC9zzHYXWaptZxjEvZYLe</a>
+  <ol>
+    <li>Auf dem Handy bei claude.ai anmelden, falls noch nicht geschehen.</li>
+    <li>Im Browsermenü „Zum Startbildschirm hinzufügen“ wählen. Dann liegt der Monatslauf wie eine App auf dem Handy.</li>
+  </ol>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  if (window.QRCode) new QRCode(document.getElementById('qr'), {text: document.getElementById('link').href, width: 220, height: 220, colorDark: '#101B33', colorLight: '#ffffff'});
+  else document.getElementById('qr').textContent = 'QR-Code braucht eine Internetverbindung. Der Link darunter funktioniert trotzdem.';
+</script>
+</body>
+</html>

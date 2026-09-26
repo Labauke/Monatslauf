@@ -1,0 +1,667 @@
+<title>Gipfelsturm</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EEF2F7; --surface:#FFFFFF; --surface-2:#F5F7FB; --ink:#101B33; --muted:#566380; --line:#D5DCE7;
+  --accent:#2451B8; --accent-ink:#FFFFFF; --gold:#F5B82E;
+  --shadow:0 1px 2px rgba(16,27,51,.06),0 10px 30px rgba(16,27,51,.10);
+  --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0B1220; --surface:#131C30; --surface-2:#18233B; --ink:#E8EDF6; --muted:#95A2BA; --line:#26324A;
+    --accent:#86A8FF; --accent-ink:#0B1220;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0B1220; --surface:#131C30; --surface-2:#18233B; --ink:#E8EDF6; --muted:#95A2BA; --line:#26324A;
+  --accent:#86A8FF; --accent-ink:#0B1220;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 72px;display:flex;flex-direction:column;gap:28px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
+.eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 6px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(44px,8vw,76px);line-height:.88;margin:0;text-transform:uppercase;letter-spacing:.01em}
+.lede{margin:10px 0 0;max-width:60ch;color:var(--muted);font-size:16px}
+.month{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
+.month b{font-family:var(--display);font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-weight:600;font-size:13px;background:var(--surface);border:1px solid var(--line)}
+.pill.hot{background:var(--gold);border-color:var(--gold);color:#1a1405}
+
+/* scene */
+.scene-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.scene-wrap{overflow-x:auto}
+#scene{display:block;width:100%;min-width:720px;height:auto}
+.controls{display:flex;flex-wrap:wrap;gap:14px 28px;padding:16px 18px;border-top:1px solid var(--line)}
+.ctl{display:flex;flex-direction:column;gap:6px}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1.5px solid var(--line);background:var(--surface-2);border-radius:999px;padding:5px 12px;font-weight:600;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.demo{padding:4px 18px 18px;display:flex;flex-direction:column;gap:10px}
+.demo-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.demo-head p{margin:0;color:var(--muted);font-size:14px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px;font-size:14px}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.who{display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.who i{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1.5px var(--ink)}
+.who b{display:block;font-size:14px}
+.who span{display:block;font-size:12px;color:var(--muted)}
+.who button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px;white-space:nowrap}
+
+/* scene internals */
+#scene .sky{opacity:0;transition:opacity 1.2s}
+#scene.t-morgen .sky-morgen,#scene.t-mittag .sky-mittag,#scene.t-abend .sky-abend,#scene.t-nacht .sky-nacht{opacity:1}
+#scene [data-f]{transition:fill 1.2s}
+#scene.t-mittag{--far:#B9C6DF;--near:#93A6C9;--rockA:#9199AB;--rockB:#6D7589;--alm:#7CC063;--tal:#5E9F4C;--snow:#F4F8FF;--tree:#2F6B3A;--win:#CFE3F5;--shade:.13}
+#scene.t-morgen{--far:#D2BFD9;--near:#AE9CC3;--rockA:#A99C9F;--rockB:#817585;--alm:#8DBB63;--tal:#6C9D50;--snow:#FFEFE3;--tree:#2F5E3A;--win:#FFE7A0;--shade:.12}
+#scene.t-abend{--far:#8C719F;--near:#6A5687;--rockA:#8B6F7C;--rockB:#5E4A62;--alm:#6E8F52;--tal:#557A45;--snow:#FFD6C4;--tree:#2A4A33;--win:#FFD36B;--shade:.18}
+#scene.t-nacht{--far:#2D3B64;--near:#243053;--rockA:#404A68;--rockB:#2B3350;--alm:#2F4A3C;--tal:#243C31;--snow:#BAC7E6;--tree:#16281E;--win:#FFD36B;--shade:.25}
+#stars{opacity:0;transition:opacity 1.2s}
+#scene.t-nacht #stars{opacity:1}
+.twinkle{animation:twinkle 3s ease-in-out infinite alternate}
+.cloud{animation:drift 36s ease-in-out infinite alternate}
+.flake{animation:fall linear infinite}
+.smoke{animation:smoke 4s ease-out infinite}
+.burst{transform-box:fill-box;transform-origin:center;animation:burst 1.8s ease-out infinite}
+.flag{transform-box:fill-box;transform-origin:left center;animation:wave 1.2s ease-in-out infinite alternate}
+.banner{animation:pop 3.4s ease forwards}
+.banner.stay{animation:popstay .6s ease forwards}
+.tn{font:700 13px var(--body);fill:#10182A}
+.ta{font:700 12px var(--display);letter-spacing:.03em;fill:#10182A}
+.tg{font:600 11px var(--body);fill:#46526B}
+.ruler-t{font:600 11px var(--display);letter-spacing:.04em;fill:#10182A}
+.zone-t{font:700 9px var(--body);letter-spacing:.12em;text-transform:uppercase}
+.bn{font:800 24px var(--display);letter-spacing:.03em;text-transform:uppercase;fill:#1a1405}
+@keyframes twinkle{from{opacity:.25}to{opacity:1}}
+@keyframes drift{from{transform:translateX(-50px)}to{transform:translateX(50px)}}
+@keyframes fall{from{transform:translate(0,-30px)}to{transform:translate(-50px,670px)}}
+@keyframes smoke{from{transform:translate(0,0) scale(.6);opacity:.7}to{transform:translate(-14px,-46px) scale(1.6);opacity:0}}
+@keyframes burst{0%{transform:scale(.1);opacity:1}70%{opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes wave{from{transform:skewY(-6deg) scaleX(.92)}to{transform:skewY(5deg) scaleX(1)}}
+@keyframes pop{0%{opacity:0;transform:translateY(-16px)}10%{opacity:1;transform:translateY(0)}85%{opacity:1}100%{opacity:0}}
+@keyframes popstay{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+
+/* figures */
+.limb{transform-box:view-box}
+.p-hike .l1,.p-hike .a1{animation:step 1s ease-in-out infinite alternate}
+.p-hike .l2{animation:step 1s ease-in-out infinite alternate-reverse}
+.p-hike .bob{animation:bob .5s ease-in-out infinite alternate}
+.p-climb .bob{animation:climb 1.1s ease-in-out infinite alternate}
+.p-climb .c1{transform-origin:24px 19px;animation:reach 1.1s ease-in-out infinite alternate}
+.p-rest .munch{transform-origin:22px 26px;transform-box:view-box;animation:munch 1.6s ease-in-out infinite}
+.p-cheer .bob{animation:jump .45s ease-in-out infinite alternate}
+.tail{transform-box:view-box;animation:step .6s ease-in-out infinite alternate}
+.zz text{font-family:var(--display);font-weight:800;fill:#fff;opacity:0;animation:zz 2.4s ease-in-out infinite}
+.zz text:nth-child(2){animation-delay:.6s}.zz text:nth-child(3){animation-delay:1.2s}
+@keyframes step{from{transform:rotate(-13deg)}to{transform:rotate(13deg)}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-1.2px)}}
+@keyframes climb{from{transform:translateY(2px)}to{transform:translateY(-2px)}}
+@keyframes reach{from{transform:rotate(0)}to{transform:rotate(-12deg)}}
+@keyframes munch{0%,60%,100%{transform:rotate(0)}75%{transform:rotate(-35deg)}}
+@keyframes jump{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@keyframes zz{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:0;transform:translateY(-5px)}}
+@media (prefers-reduced-motion:reduce){
+  #scene *{animation:none!important;transition:none!important}
+}
+
+/* concept text */
+.concept{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.sec.wide{grid-column:1 / -1}
+.sec h2{font-family:var(--display);font-weight:700;font-size:26px;text-transform:uppercase;letter-spacing:.02em;margin:0;line-height:1.05;text-wrap:balance}
+.sec p{margin:0;max-width:68ch}
+.sec ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;padding:6px 10px;border-bottom:1.5px solid var(--line)}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{text-align:right;white-space:nowrap}
+tr.now td{background:var(--surface-2);font-weight:700}
+.zone-sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:-1px;box-shadow:0 0 0 1px var(--line)}
+.note{font-size:13px;color:var(--muted)}
+
+@media (max-width:760px){
+  .concept{grid-template-columns:1fr}
+  .month{align-items:flex-start;text-align:left}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Konzept für den Monatslauf</p>
+      <h1>Gipfelsturm</h1>
+      <p class="lede">Jeden Monat ein neuer Berg. Jede Trainingsminute bringt dich höher hinauf, und wer am Monatsende vorne liegt, steht auf dem Gipfel.</p>
+    </div>
+    <div class="month">
+      <span class="lbl">Berg des Monats · September 2026</span>
+      <b>Kilimandscharo · 5.895 m</b>
+      <span class="pill" id="deadline">Noch 4 Tage bis zum Gipfeltag</span>
+    </div>
+  </header>
+
+  <div class="scene-card">
+    <div class="scene-wrap">
+      <svg id="scene" class="t-mittag" viewBox="0 0 1000 640" role="img" aria-label="Berg mit Wanderweg, auf dem die Figuren je nach Trainingszeit unterschiedlich hoch stehen">
+        <defs>
+          <linearGradient id="g-morgen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FA2DC"/><stop offset=".55" stop-color="#FFC7A0"/><stop offset="1" stop-color="#FFE8C8"/></linearGradient>
+          <linearGradient id="g-mittag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3F8BEF"/><stop offset="1" stop-color="#C4E2FF"/></linearGradient>
+          <linearGradient id="g-abend" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2462"/><stop offset=".55" stop-color="#B24B6B"/><stop offset="1" stop-color="#FF9B5C"/></linearGradient>
+          <linearGradient id="g-nacht" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#060B20"/><stop offset="1" stop-color="#1D2A58"/></linearGradient>
+          <linearGradient id="g-rock" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--rockA);transition:stop-color 1.2s"/><stop offset="1" style="stop-color:var(--rockB);transition:stop-color 1.2s"/></linearGradient>
+          <clipPath id="mtn-clip"><path d="M0 640 L0 610 L40 600 L180 470 L260 430 L330 330 L400 280 L460 170 L510 110 L540 70 L570 95 L620 150 L700 250 L760 300 L840 420 L920 520 L1000 580 L1000 640 Z"/></clipPath>
+        </defs>
+        <rect class="sky sky-morgen" width="1000" height="640" fill="url(#g-morgen)"/>
+        <rect class="sky sky-mittag" width="1000" height="640" fill="url(#g-mittag)"/>
+        <rect class="sky sky-abend" width="1000" height="640" fill="url(#g-abend)"/>
+        <rect class="sky sky-nacht" width="1000" height="640" fill="url(#g-nacht)"/>
+        <g id="stars"></g>
+        <g id="celestial"></g>
+        <g id="clouds-back"></g>
+        <path data-f style="fill:var(--far)" d="M0 640 L0 370 L80 320 L150 350 L230 250 L300 315 L360 285 L430 340 L500 300 L560 330 L640 280 L700 320 L780 205 L860 270 L930 235 L1000 290 L1000 640 Z"/>
+        <path data-f style="fill:var(--near)" d="M0 640 L0 470 L100 415 L190 450 L260 395 L340 440 L420 410 L520 460 L620 420 L700 450 L770 420 L850 355 L940 405 L1000 385 L1000 640 Z"/>
+        <path d="M0 640 L0 610 L40 600 L180 470 L260 430 L330 330 L400 280 L460 170 L510 110 L540 70 L570 95 L620 150 L700 250 L760 300 L840 420 L920 520 L1000 580 L1000 640 Z" fill="url(#g-rock)"/>
+        <g clip-path="url(#mtn-clip)">
+          <path d="M340 360 Q380 350 420 372 M600 300 Q640 290 690 306 M250 470 Q300 455 350 470 M700 380 Q760 370 800 392 M480 240 Q520 232 560 246" stroke="rgba(0,0,0,.14)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path data-f style="fill:var(--alm)" d="M0 402 Q120 386 240 408 T480 404 T720 414 T1000 398 L1000 640 L0 640 Z"/>
+          <path data-f style="fill:var(--tal)" d="M0 522 Q150 508 300 526 T620 520 T1000 516 L1000 640 L0 640 Z"/>
+          <path data-f style="fill:var(--snow)" d="M0 0 L1000 0 L1000 228 L668 230 L648 250 L622 234 L598 258 L572 236 L548 262 L522 238 L498 256 L474 234 L450 250 L426 232 L0 232 Z"/>
+          <path d="M540 60 L1000 575 L1000 640 L700 640 Z" fill="#1B2440" style="opacity:var(--shade);transition:opacity 1.2s"/>
+          <g id="trees"></g>
+        </g>
+        <path id="trail" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="3" stroke-dasharray="1 8" stroke-linecap="round"/>
+        <g id="hut">
+          <rect x="44" y="562" width="64" height="36" fill="#8A5A44" stroke="#10182A" stroke-width="2"/>
+          <path d="M36 564 L76 534 L116 564 Z" fill="#B5452F" stroke="#10182A" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="92" y="538" width="8" height="16" fill="#5C3A2B" stroke="#10182A" stroke-width="1.5"/>
+          <rect data-f x="54" y="572" width="14" height="11" style="fill:var(--win)" stroke="#10182A" stroke-width="1.5"/>
+          <rect x="80" y="574" width="14" height="24" fill="#5C3A2B" stroke="#10182A" stroke-width="1.5"/>
+          <circle class="smoke" cx="96" cy="532" r="5" fill="#fff" opacity=".7"/>
+          <circle class="smoke" cx="96" cy="532" r="5" fill="#fff" opacity=".7" style="animation-delay:-2s"/>
+          <rect x="30" y="604" width="92" height="17" rx="4" fill="rgba(255,255,255,.88)" stroke="#10182A" stroke-width="1.2"/>
+          <text x="76" y="616.5" text-anchor="middle" class="zone-t" fill="#10182A">Talstation</text>
+        </g>
+        <g id="cross"><path d="M526 72 L526 36 M517 46 L535 46" stroke="#10182A" stroke-width="4.4" stroke-linecap="round"/><path d="M526 72 L526 36 M517 46 L535 46" stroke="#A8743F" stroke-width="2.4" stroke-linecap="round"/></g>
+        <g id="climbers"></g>
+        <g id="clouds-front"></g>
+        <g id="weather"></g>
+        <g id="fx"></g>
+        <g id="ruler"></g>
+        <g id="banner"></g>
+      </svg>
+    </div>
+
+    <div class="controls">
+      <div class="ctl"><span class="lbl">Tageszeit</span><div class="seg" id="ctlTime"></div></div>
+      <div class="ctl"><span class="lbl">Wetter</span><div class="seg" id="ctlWeather"></div></div>
+      <div class="ctl"><span class="lbl">Ansicht</span><div class="seg" id="ctlMode"></div></div>
+    </div>
+    <div class="demo">
+      <div class="demo-head">
+        <p><b>Probier es aus:</b> Trag für jemanden eine Stunde Training ein und schau, wie die Figur den Berg hinaufsteigt. Alle Namen sind Beispiele.</p>
+        <button class="linkbtn" id="reset">Beispiel zurücksetzen</button>
+      </div>
+      <div class="roster" id="roster"></div>
+    </div>
+  </div>
+
+  <div class="concept">
+    <section class="sec">
+      <h2>Höhe statt Rennbahn</h2>
+      <p>Statt nach rechts zu laufen, steigen alle denselben Weg hinauf. Die Höhe bleibt relativ: Wer führt, steht immer bei 92 % des Weges, knapp unter dem Gipfel. Alle anderen stehen im Verhältnis dazu.</p>
+      <p>Der Abstand wird in echten Höhenmetern des Monatsbergs angezeigt, zum Beispiel „−1.230 m“. Den Gipfel selbst erreicht nur, wer am letzten Tag des Monats vorne liegt.</p>
+    </section>
+
+    <section class="sec">
+      <h2>Stimmungen am Berg</h2>
+      <ul>
+        <li><b>Spitze:</b> trägt Sonnenbrille, und daneben weht eine Fahne in der eigenen Trikotfarbe.</li>
+        <li><b>Schlusslicht:</b> sitzt auf einem Felsen und macht Brotzeit mit Thermoskanne.</li>
+        <li><b>3 Tage Pause:</b> hat ein Zelt aufgeschlagen und schläft, nur der Kopf schaut heraus.</li>
+        <li><b>Eine Woche Pause:</b> das Zelt ist eingeschneit.</li>
+        <li><b>Nachts:</b> alle Wandernden tragen Stirnlampen.</li>
+        <li><b>Wieder trainiert:</b> das Zelt wird abgebaut und es geht weiter bergauf.</li>
+      </ul>
+    </section>
+
+    <section class="sec wide">
+      <h2>Höhenzonen und Ausrüstung</h2>
+      <p>Die Figur rüstet sich automatisch um, je weiter sie aufsteigt. Die Farbe des Rucksacks zeigt die zuletzt trainierte Sportart.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Zone</th><th>Anteil am Weg</th><th>Ausrüstung</th><th>Bewegung</th></tr></thead>
+        <tbody>
+          <tr><td><span class="zone-sw" style="background:#5E9F4C"></span>Tal</td><td>0 bis 15 %</td><td>Turnschuhe und Rucksack</td><td>wandert</td></tr>
+          <tr><td><span class="zone-sw" style="background:#7CC063"></span>Alm</td><td>15 bis 37 %</td><td>dazu ein Wanderstock</td><td>wandert</td></tr>
+          <tr><td><span class="zone-sw" style="background:#7D8598"></span>Fels</td><td>37 bis 70 %</td><td>gelber Helm und Seil über der Schulter</td><td>klettert, von hinten zu sehen</td></tr>
+          <tr><td><span class="zone-sw" style="background:#F4F8FF"></span>Gletscher</td><td>ab 70 %</td><td>Schneebrille, Schal und Eispickel</td><td>stapft durch den Schnee</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="sec">
+      <h2>Himmel und Wetter</h2>
+      <p>Die Tageszeit folgt der echten Uhrzeit: Morgenrot, blauer Himmel, Sonnenuntergang und Sternenhimmel mit Mond.</p>
+      <p>Das Wetter macht die Gruppe gemeinsam. Wie viel alle zusammen in den letzten 7 Tagen trainiert haben, entscheidet über Sonne, Wolken oder Schneefall. So gibt es neben dem Wettkampf auch ein gemeinsames Ziel.</p>
+    </section>
+
+    <section class="sec">
+      <h2>Gipfeltag am Monatsende</h2>
+      <p>Um 23:59 am letzten Tag steigt die Person an der Spitze aufs Gipfelkreuz, schwenkt ihre Fahne und es gibt Feuerwerk. Der Sieg wird ins <b>Gipfelbuch</b> eingetragen, das die bisherige Siegerliste ersetzt.</p>
+      <p>Siege bleiben sichtbar: 1 Sieg bringt ein goldenes Stirnband, 2 Siege eine Medaille, ab 3 Siegen die Krone. Am nächsten Tag beginnt ein neuer Berg.</p>
+    </section>
+
+    <section class="sec wide">
+      <h2>Zwölf Berge, ein Jahr</h2>
+      <p>Die Berge werden über das Jahr immer höher. Im Dezember geht es auf den Mount Everest.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Monat</th><th>Berg</th><th>Region</th><th style="text-align:right">Höhe</th></tr></thead>
+        <tbody id="mountains"></tbody>
+      </table></div>
+    </section>
+
+    <section class="sec wide">
+      <h2>Was gleich bleibt und was offen ist</h2>
+      <ul>
+        <li>Eintragen, Anmeldung, Tierfiguren und Sportarten funktionieren wie bisher. Nur die Darstellung der Rennbahn ändert sich.</li>
+        <li>Überholen wird weiter angekündigt, zum Beispiel „Ben zieht an Anna vorbei!“.</li>
+        <li>Offen: Ab etwa 8 Personen wird der Weg voll. Dann könnten die Namensschilder erst beim Antippen erscheinen.</li>
+        <li>Offen: Auf dem Handy lässt sich die Szene seitlich wischen. Alternativ bekommt der Berg dort ein Hochformat.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ---------- figures (same characters as the Monatslauf) ---------- */
+const OUT = '#10182A';
+function shade(hex, k){ const n = parseInt(hex.slice(1), 16); const f = c => Math.round(c * (1 - k)); return `rgb(${f(n>>16&255)},${f(n>>8&255)},${f(n&255)})`; }
+const CHARACTERS = [
+  {id:'fuchs',   label:'Fuchs',   fur:'#F07A2E'},
+  {id:'baer',    label:'Bär',     fur:'#8B5A3C'},
+  {id:'panda',   label:'Panda',   fur:'#FFFFFF', limbs:'#23283A'},
+  {id:'katze',   label:'Katze',   fur:'#9AA3B5'},
+  {id:'hase',    label:'Hase',    fur:'#F3EEF3'},
+  {id:'frosch',  label:'Frosch',  fur:'#6CCB5F', eyeDy:-6, crown:10.5},
+  {id:'einhorn', label:'Einhorn', fur:'#FFFFFF'},
+  {id:'tiger',   label:'Tiger',   fur:'#F59A23'},
+  {id:'pinguin', label:'Pinguin', fur:'#23283A', noMouth:true},
+  {id:'roboter', label:'Roboter', fur:'#BFC8D6', led:true, square:true},
+];
+const CHAR = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
+function charParts(ch, hx, hy, view, ex, ey){
+  const f = ch.fur, s = `stroke="${OUT}" stroke-width="1.1" stroke-linejoin="round"`, face = view !== 'back';
+  const fx = view === 'side' ? hx + 2.8 : hx;
+  const nose = (c = OUT) => `<ellipse cx="${fx}" cy="${hy+1.6}" rx="1.4" ry="1" fill="${c}"/>`;
+  const roundEars = (outer, inner) => [-1,1].map(k => `<circle cx="${hx+k*6}" cy="${hy-6}" r="3.3" fill="${outer}" ${s}/><circle cx="${hx+k*6}" cy="${hy-6}" r="1.6" fill="${inner}"/>`).join('');
+  const cheeks = c => [-1,1].map(k => `<circle cx="${fx+k*4.6}" cy="${hy+2.6}" r="1.4" fill="${c}" opacity=".8"/>`).join('');
+  let behind = '', fur = '', mark = '', top = '';
+  switch (ch.id) {
+    case 'fuchs':
+      behind = `<path d="M${hx-6.8} ${hy-2.5} L${hx-8} ${hy-13.5} L${hx-1.5} ${hy-6.8}Z" fill="${f}" ${s}/><path d="M${hx+1.5} ${hy-6.8} L${hx+8} ${hy-13.5} L${hx+6.8} ${hy-2.5}Z" fill="${f}" ${s}/><path d="M${hx-7.8} ${hy-11.3} L${hx-8} ${hy-13.5} L${hx-6} ${hy-12.1}Z M${hx+6} ${hy-12.1} L${hx+8} ${hy-13.5} L${hx+7.8} ${hy-11.3}Z" fill="#2A2238"/>`;
+      mark = `<path d="M${fx-7} ${hy+.5} Q${fx} ${hy+4} ${fx+7} ${hy+.5} L${fx+7} ${hy+9} L${fx-7} ${hy+9}Z" fill="#fff"/>` + nose(); break;
+    case 'baer':
+      behind = roundEars(f, '#D9A77A');
+      mark = `<ellipse cx="${fx}" cy="${hy+3}" rx="4.2" ry="3.2" fill="#D9A77A"/>` + nose(); break;
+    case 'panda':
+      behind = roundEars('#23283A', '#23283A');
+      mark = ex.map((x, i) => `<ellipse cx="${x}" cy="${ey+.3}" rx="2.9" ry="3.5" transform="rotate(${i ? 25 : -25} ${x} ${ey})" fill="#23283A"/>`).join('') + nose(); break;
+    case 'katze':
+      behind = [-1,1].map(k => `<path d="M${hx+k*7} ${hy-3} L${hx+k*6.6} ${hy-12.5} L${hx+k*1.5} ${hy-7}Z" fill="${f}" ${s}/><path d="M${hx+k*6} ${hy-5} L${hx+k*5.9} ${hy-10} L${hx+k*3.2} ${hy-7}Z" fill="#FF8FB8"/>`).join('');
+      fur = `<path d="M${hx-1.6} ${hy-7.6} L${hx-1.2} ${hy-5} M${hx+1.6} ${hy-7.6} L${hx+1.2} ${hy-5}" stroke="#6F788C" stroke-width="1.2" stroke-linecap="round"/>`;
+      mark = `<path d="M${fx-1.4} ${hy+1} L${fx+1.4} ${hy+1} L${fx} ${hy+2.4}Z" fill="#FF8FB8"/>`;
+      if (face) top = `<path d="M${fx-3} ${hy+2.2} L${fx-9.5} ${hy+1.2} M${fx-3} ${hy+3} L${fx-9.5} ${hy+3.8} M${fx+3} ${hy+2.2} L${fx+9.5} ${hy+1.2} M${fx+3} ${hy+3} L${fx+9.5} ${hy+3.8}" stroke="${OUT}" stroke-width=".6" stroke-linecap="round"/>`; break;
+    case 'hase':
+      behind = [-1,1].map(k => `<ellipse cx="${hx+k*3.2}" cy="${hy-13}" rx="2.8" ry="7" transform="rotate(${k*12} ${hx+k*3.2} ${hy-13})" fill="${f}" ${s}/><ellipse cx="${hx+k*3.2}" cy="${hy-13}" rx="1.3" ry="5" transform="rotate(${k*12} ${hx+k*3.2} ${hy-13})" fill="#FFB4C8"/>`).join('');
+      mark = cheeks('#FFB4C8') + nose('#FF8FB8');
+      if (face) top = `<rect x="${fx-1.1}" y="${hy+4.1}" width="2.2" height="2" rx=".4" fill="#fff" stroke="${OUT}" stroke-width=".5"/>`; break;
+    case 'frosch':
+      behind = ex.map(x => `<circle cx="${x}" cy="${ey}" r="3.4" fill="${f}" ${s}/>`).join('');
+      mark = cheeks('#FF8FB8'); break;
+    case 'einhorn':
+      behind = [['#C89BFF',-3,-8.6],['#FF8FB8',-6.6,-6],['#FFD23F',-8.8,-2],['#6EEBB0',-9,2.4],['#9EE7FF',-7.6,6]].map(([c,dx,dy]) => `<circle cx="${hx+dx}" cy="${hy+dy}" r="2.8" fill="${c}" stroke="${OUT}" stroke-width=".9"/>`).join('')
+        + `<path d="M${hx+3} ${hy-6.5} L${hx+5.8} ${hy-12} L${hx+7} ${hy-4.2}Z" fill="${f}" ${s}/>`;
+      mark = cheeks('#FFB4C8');
+      top = `<path d="M${hx+.2} ${hy-6.8} L${hx+2.6} ${hy-17} L${hx+4.2} ${hy-6.2}Z" fill="#F5B82E" ${s}/><path d="M${hx+.9} ${hy-9.4} L${hx+3.9} ${hy-10.2} M${hx+1.6} ${hy-12.4} L${hx+3.4} ${hy-13}" stroke="${OUT}" stroke-width=".6"/>`; break;
+    case 'tiger':
+      behind = roundEars(f, '#fff');
+      fur = `<path d="M${hx-2.2} ${hy-7.8} L${hx-1.5} ${hy-4.6} M${hx+2.2} ${hy-7.8} L${hx+1.5} ${hy-4.6} M${hx} ${hy-7.8} L${hx} ${hy-5.4} M${hx-7.8} ${hy-1} L${hx-5} ${hy-.2} M${hx-7.8} ${hy+2.2} L${hx-5.2} ${hy+2.2} M${hx+7.8} ${hy-1} L${hx+5} ${hy-.2} M${hx+7.8} ${hy+2.2} L${hx+5.2} ${hy+2.2}" stroke="${OUT}" stroke-width="1.3" stroke-linecap="round"/>`;
+      mark = `<ellipse cx="${fx}" cy="${hy+3.4}" rx="4.4" ry="3" fill="#fff"/>` + nose('#FF8FB8'); break;
+    case 'pinguin':
+      mark = `<ellipse cx="${fx}" cy="${hy+3.4}" rx="6.4" ry="5.4" fill="#fff"/>` + ex.map(x => `<circle cx="${x}" cy="${ey}" r="3.2" fill="#fff"/>`).join('');
+      if (face) top = view === 'side'
+        ? `<path d="M${fx+1} ${hy+1.2} L${fx+6.8} ${hy+2.6} L${fx+1} ${hy+4}Z" fill="#FFA42E" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/>`
+        : `<path d="M${fx-2.3} ${hy+1.6} L${fx+2.3} ${hy+1.6} L${fx} ${hy+4.6}Z" fill="#FFA42E" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/>`; break;
+    case 'roboter':
+      behind = `<path d="M${hx} ${hy-7} L${hx} ${hy-12}" stroke="${OUT}" stroke-width="1.4"/><circle cx="${hx}" cy="${hy-12.8}" r="1.9" fill="#FF4D5E" ${s}/><rect x="${hx-9.4}" y="${hy-1.6}" width="2.4" height="3.4" rx=".6" fill="#8C96A8" ${s}/><rect x="${hx+7}" y="${hy-1.6}" width="2.4" height="3.4" rx=".6" fill="#8C96A8" ${s}/>`;
+      mark = `<rect x="${fx-2.8}" y="${hy+2.8}" width="5.6" height="2.2" rx=".6" fill="#23283A"/><path d="M${fx-1} ${hy+2.8} L${fx-1} ${hy+5} M${fx+1} ${hy+2.8} L${fx+1} ${hy+5}" stroke="#6EF3FF" stroke-width=".5"/>`; break;
+  }
+  return {behind, clipped: fur + (face ? mark : ''), top};
+}
+const POSES = {
+  hike:  {head:[26.5,9.5], S:[24.8,18], H:[21.5,31.5], face:'side', shadow:true,
+          arms:[{pts:[[24,20],[19,26],[16.5,31]], cls:'a1', back:true}, {pts:[[24,20],[29.5,25.5],[33,23]]}],
+          legs:[{pts:[[21.5,31.5],[16.5,39],[13,46.5]], cls:'l1', back:true}, {pts:[[21.5,31.5],[28,36.5],[28.5,45]], cls:'l2'}]},
+  climb: {head:[24,9.5], S:[24,17], H:[24,31], face:'back',
+          arms:[{pts:[[24,19],[17,13],[15.5,4]], cls:'c1'}, {pts:[[24,19],[31,15],[33.5,9.5]]}],
+          legs:[{pts:[[24,31],[17.5,37],[17.5,45.5]]}, {pts:[[24,31],[30.5,38],[32.5,44.5]]}]},
+  cheer: {head:[24,9], S:[24,17], H:[24,31], face:'front', shadow:true,
+          arms:[{pts:[[24,19],[16.5,12],[13.5,2]]}, {pts:[[24,19],[31.5,12],[34.5,2]]}],
+          legs:[{pts:[[24,31],[19,40],[17,48]]}, {pts:[[24,31],[29,40],[31,48]]}]},
+  rest:  {head:[22,15.5], S:[22,23], H:[21,35], face:'front',
+          arms:[{pts:[[22,26],[15,32]], back:true}, {pts:[[22,26],[28,31],[30.5,27.5]], cls:'munch'}],
+          legs:[{pts:[[21,35],[32,35],[33,46]]}]},
+  tent:  {head:[24,40.5], S:[24,40], H:[24,40], face:'front', arms:[], legs:[]},
+};
+const pathOf = pts => 'M' + pts.map(p => p.join(' ')).join(' L');
+function figureSVG({uid='', avatar, color, wins=0, pose='hike', lead=false, sleep=false, snowed=false, gear='', pack='#E0A33A', lamp=false, flag=false}){
+  const P = POSES[pose], [hx, hy] = P.head, ch = CHAR[avatar] || CHARACTERS[0];
+  const cap = 'stroke-linecap="round" stroke-linejoin="round" fill="none"';
+  const furC = ch.limbs || ch.fur, back = shade(furC, .22), dark = shade(color, .5);
+  const stroke = (d, w, c) => `<path d="${d}" stroke="${OUT}" stroke-width="${w + 2.6}" ${cap}/><path d="${d}" stroke="${c}" stroke-width="${w}" ${cap}/>`;
+  const limb = (L, isLeg) => {
+    const c = L.back ? back : furC, end = L.pts[L.pts.length - 1], [ox, oy] = L.pts[0];
+    const tip = isLeg
+      ? `<ellipse cx="${end[0] + 2}" cy="${end[1] + .6}" rx="3.9" ry="2.3" fill="${gear === 'schnee' ? '#6B4A36' : '#fff'}" stroke="${OUT}" stroke-width="1.2"/><path d="M${end[0] - .5} ${end[1] + 1.8} L${end[0] + 5} ${end[1] + 1.8}" stroke="${dark}" stroke-width="1.1"/>`
+      : `<circle cx="${end[0]}" cy="${end[1]}" r="2.4" fill="${c}" stroke="${OUT}" stroke-width="1.2"/>`;
+    return `<g class="limb ${L.cls || ''}" style="transform-origin:${ox}px ${oy}px">${stroke(pathOf(L.pts), isLeg ? 5 : 4.2, c)}${tip}</g>`;
+  };
+  const [sx, sy] = P.S, [px, py] = P.H;
+  const mx = sx + (px - sx) * .62, my = sy + (py - sy) * .62;
+  const torso = pose === 'tent' ? '' : stroke(`M${sx} ${sy} L${px} ${py}`, 8.5, color) + `<path d="M${mx} ${my} L${px} ${py}" stroke="#1B2440" stroke-width="8.8" ${cap}/>`;
+  const backs = P.arms.filter(a => a.back).map(a => limb(a)).join('') + P.legs.filter(l => l.back).map(l => limb(l, true)).join('');
+  const frontLegs = P.legs.filter(l => !l.back).map(l => limb(l, true)).join('');
+  const frontArms = P.arms.filter(a => !a.back).map(a => limb(a)).join('');
+
+  const view = P.face;
+  const ex = view === 'side' ? (ch.id === 'frosch' ? [hx + .6, hx + 5.4] : [hx + 1.2, hx + 4.8]) : (ch.id === 'frosch' ? [hx - 3.7, hx + 3.7] : [hx - 2.7, hx + 2.7]);
+  const ey = hy - .3 + (ch.eyeDy || 0), po = view === 'side' ? .7 : 0;
+  const parts = charParts(ch, hx, hy, view, ex, ey);
+  let face = '';
+  if (view !== 'back') {
+    const mouthX = view === 'side' ? hx + 3.2 : hx;
+    if (sleep) face = ex.map(x => `<path d="M${x-1.7} ${ey} Q${x} ${ey+1.5} ${x+1.7} ${ey}" stroke="${OUT}" stroke-width="1.1" ${cap}/>`).join('');
+    else if (lead) face = `<path d="M${hx-7.4} ${ey-1} L${ex[0]-2.6} ${ey-1}" stroke="${OUT}" stroke-width="1.2"/><rect x="${ex[0]-2.8}" y="${ey-2.6}" width="${ex[1]-ex[0]+5.6}" height="4.4" rx="2" fill="${OUT}"/><path d="M${ex[0]-1.4} ${ey-1.4} L${ex[0]+.6} ${ey-1.4}" stroke="#9EE7FF" stroke-width=".9" stroke-linecap="round"/>`;
+    else if (ch.led) face = ex.map(x => `<rect x="${x-1.6}" y="${ey-1.3}" width="3.2" height="2.6" rx=".8" fill="#6EF3FF" stroke="${OUT}" stroke-width=".7"/>`).join('');
+    else face = ex.map(x => `<ellipse cx="${x}" cy="${ey}" rx="1.9" ry="2.2" fill="#fff" stroke="${OUT}" stroke-width=".8"/><circle cx="${x+po}" cy="${ey+.2}" r="1" fill="${OUT}"/><circle cx="${x+po+.4}" cy="${ey-.4}" r=".35" fill="#fff"/>`).join('');
+    if (!ch.noMouth && ch.id !== 'roboter') face += sleep ? `<ellipse cx="${mouthX}" cy="${hy+3.9}" rx="1.1" ry="1.3" fill="${OUT}"/>`
+      : `<path d="M${mouthX-1.8} ${hy+3.3} Q${mouthX} ${hy+(lead ? 5.7 : 4.9)} ${mouthX+1.8} ${hy+3.3}" stroke="${OUT}" stroke-width="1.1" ${lead ? 'fill="#fff"' : cap}/>`;
+  }
+  const shape = ch.square ? `<rect x="${hx-7.4}" y="${hy-7.4}" width="14.8" height="14.8" rx="3.6"` : `<circle cx="${hx}" cy="${hy}" r="7.6"`;
+  const clipId = `hc-${uid || 'x'}-${pose}`;
+  const head = `${parts.behind}${shape} fill="${ch.fur}"/><clipPath id="${clipId}">${shape}/></clipPath><g clip-path="url(#${clipId})">${parts.clipped}</g>${shape} fill="none" stroke="${OUT}" stroke-width="1.3"/>${face}${parts.top}`;
+
+  // mountain gear
+  let gBack = '', gTorso = '', gHead = '', gHand = '', under = '', over = '';
+  const walking = pose === 'hike' || pose === 'climb';
+  if (walking) {
+    if (view === 'back') gTorso += `<rect x="${sx-5.5}" y="${sy+1}" width="11" height="12" rx="3" fill="${pack}" stroke="${OUT}" stroke-width="1.2"/><path d="M${sx-5.5} ${sy+5} L${sx+5.5} ${sy+5}" stroke="${OUT}" stroke-width=".9"/>`;
+    else {
+      gBack += `<rect x="${sx-11}" y="${sy-1.5}" width="8.5" height="13" rx="3" fill="${pack}" stroke="${OUT}" stroke-width="1.2"/><rect x="${sx-10}" y="${sy+5}" width="6.5" height="4" rx="1.2" fill="${shade(pack, .25)}"/>`;
+      gTorso += `<path d="M${sx-1.8} ${sy} L${sx+.8} ${sy+7.5}" stroke="#3A2A20" stroke-width="1.5" stroke-linecap="round"/>`;
+    }
+  }
+  if (pose === 'hike' && gear === 'alm') gHand += `<path d="M31.8 14 L36.2 49" stroke="${OUT}" stroke-width="3" stroke-linecap="round"/><path d="M31.8 14 L36.2 49" stroke="#DDE3EE" stroke-width="1.4" stroke-linecap="round"/>`;
+  if (pose === 'hike' && gear === 'schnee') gHand += `<path d="M32 17 L36 47" stroke="${OUT}" stroke-width="3.2" stroke-linecap="round"/><path d="M32 17 L36 47" stroke="#8B5A3C" stroke-width="1.8" stroke-linecap="round"/><path d="M28.2 17.6 Q31.8 14.6 35.6 17.2" stroke="${OUT}" stroke-width="3.4" ${cap}/><path d="M28.2 17.6 Q31.8 14.6 35.6 17.2" stroke="#C9CED8" stroke-width="1.9" ${cap}/>`;
+  if (gear === 'schnee' && walking) {
+    gTorso += `<path d="M${sx-4} ${sy-.5} Q${sx} ${sy+2.2} ${sx+4} ${sy-.5}" stroke="${OUT}" stroke-width="4.6" ${cap}/><path d="M${sx-4} ${sy-.5} Q${sx} ${sy+2.2} ${sx+4} ${sy-.5}" stroke="#E23E3E" stroke-width="2.8" ${cap}/>`
+      + `<g class="tail" style="transform-origin:${sx-3}px ${sy}px"><path d="M${sx-3} ${sy+.5} L${sx-9.5} ${sy+3.5}" stroke="${OUT}" stroke-width="4.2" ${cap}/><path d="M${sx-3} ${sy+.5} L${sx-9.5} ${sy+3.5}" stroke="#E23E3E" stroke-width="2.4" ${cap}/></g>`;
+    gHead += `<rect x="${hx-7.2}" y="${hy-6.8}" width="14.4" height="3.8" rx="1.9" fill="${view === 'back' ? '#2A2238' : '#9EE7FF'}" stroke="${OUT}" stroke-width=".9"/>`;
+  }
+  if (gear === 'fels' && walking) {
+    gHead += `<path d="M${hx-8.2} ${hy-2} A8.2 8.2 0 0 1 ${hx+8.2} ${hy-2} Z" fill="#FFD23F" stroke="${OUT}" stroke-width="1.1"/><path d="M${hx-3} ${hy-8.6} Q${hx} ${hy-9.6} ${hx+3} ${hy-8.6}" stroke="#fff" stroke-width="1" fill="none" opacity=".8"/>`;
+    gTorso += `<circle cx="${sx+2}" cy="${sy+7}" r="4.2" fill="none" stroke="${OUT}" stroke-width="3.4"/><circle cx="${sx+2}" cy="${sy+7}" r="4.2" fill="none" stroke="#FF7A45" stroke-width="1.9"/>`;
+  }
+  if (lamp && pose === 'hike') {
+    gHead += `<path d="M${hx+5} ${hy-5.5} L${hx+34} ${hy-14} L${hx+34} ${hy+8} Z" fill="#FFF2B0" opacity=".35"/><circle cx="${hx+5}" cy="${hy-5.5}" r="1.8" fill="#FFF2B0" stroke="${OUT}" stroke-width=".7"/>`;
+  } else if (lamp && pose !== 'tent' && view !== 'back') gHead += `<circle cx="${hx}" cy="${hy-6.5}" r="1.8" fill="#FFF2B0" stroke="${OUT}" stroke-width=".7"/>`;
+  if (P.shadow) under += `<ellipse cx="22" cy="50" rx="13" ry="2.2" fill="rgba(0,0,0,.28)"/>`;
+  if (flag) under += `<path d="M42 50 L42 -6" stroke="${OUT}" stroke-width="2.8" stroke-linecap="round"/><path d="M42 50 L42 -6" stroke="#DDE3EE" stroke-width="1.3"/><path class="flag" d="M42.6 -6 L57 -1 L42.6 4.5 Z" fill="${color}" stroke="${OUT}" stroke-width="1" stroke-linejoin="round"/>`;
+  if (pose === 'rest') {
+    under += `<path d="M-3 47 Q-4 35 7 32 Q22 28 37 32 Q49 35 48 47 Z" fill="#8C93A3" stroke="${OUT}" stroke-width="1.2"/><path d="M8 38 Q14 36 18 38 M30 41 Q36 39 40 41" stroke="rgba(0,0,0,.2)" stroke-width="1.2" fill="none"/><rect x="40" y="36" width="4.6" height="10" rx="1.4" fill="#E23E3E" stroke="${OUT}" stroke-width="1"/>`;
+    over += `<path d="M28.5 29.5 Q32.5 25.5 36.5 29.5 Z" fill="#E9B872" stroke="${OUT}" stroke-width=".8"/><rect x="28.5" y="29.3" width="8" height="1.6" fill="#6EEBB0"/><rect x="28.5" y="30.8" width="8" height="2.2" rx="1" fill="#E9B872" stroke="${OUT}" stroke-width=".8"/>`;
+  }
+  if (pose === 'tent') {
+    under += `<ellipse cx="24" cy="49" rx="24" ry="2.6" fill="rgba(0,0,0,.28)"/><path d="M0 48 L24 10 L48 48 Z" fill="#FF7A45" stroke="${OUT}" stroke-width="1.4" stroke-linejoin="round"/><path d="M24 10 L30 48" stroke="rgba(0,0,0,.18)" stroke-width="5"/><path d="M13 48 L24 28 L35 48 Z" fill="#7A2E1B" stroke="${OUT}" stroke-width="1.1" stroke-linejoin="round"/><path d="M24 10 L24 4" stroke="${OUT}" stroke-width="1.6"/>`;
+    if (snowed) over += `<path d="M5 40 L24 9 L43 40 Q39 35 35 38.5 Q31 33 27 37 Q24 32 21 37 Q17 33 13 38.5 Q9 35 5 40 Z" fill="#F4F8FF" stroke="${OUT}" stroke-width="1"/><path d="M-4 50 Q4 43 12 47 Q24 42 36 47 Q44 43 52 50 Z" fill="#F4F8FF" stroke="${OUT}" stroke-width="1"/><path d="M20 20 L20 24 M28 22 L28 25.5" stroke="#9EE7FF" stroke-width="1.2" stroke-linecap="round"/>`;
+  }
+  const crownY = hy - (ch.crown || 8);
+  const crown = wins >= 3 ? `<path d="M${hx-6.5} ${crownY+6} L${hx-5.5} ${crownY-.5} L${hx-2.7} ${crownY+3.5} L${hx} ${crownY-1.5} L${hx+2.7} ${crownY+3.5} L${hx+5.5} ${crownY-.5} L${hx+6.5} ${crownY+6} Z" fill="var(--gold)" stroke="${OUT}" stroke-width="1" stroke-linejoin="round"/><circle cx="${hx}" cy="${crownY+3.8}" r="1.1" fill="#E23E3E"/>` : '';
+  const band = wins >= 1 && wins < 3 && gear !== 'fels' ? `<rect x="${hx-7.7}" y="${hy-3.6}" width="15.4" height="3" rx="1.2" fill="var(--gold)" stroke="${OUT}" stroke-width=".8"/>` : '';
+  const medal = wins >= 2 && pose !== 'tent' ? `<path d="M${sx-3} ${sy-1} L${sx} ${sy+4.5} L${sx+3} ${sy-1}" fill="none" stroke="#E23E3E" stroke-width="1.5"/><circle cx="${sx}" cy="${sy+6.2}" r="2.8" fill="var(--gold)" stroke="${OUT}" stroke-width=".8"/>` : '';
+  const zz = sleep ? `<g class="zz"><text x="${hx+8}" y="${hy-7}" font-size="7">z</text><text x="${hx+12}" y="${hy-12}" font-size="8.5">z</text><text x="${hx+17}" y="${hy-17}" font-size="10">Z</text></g>` : '';
+  return `<svg viewBox="-12 -18 64 70" class="p-${pose}" aria-hidden="true">${under}<g class="bob">${gBack}${backs}${torso}${gTorso}${frontLegs}${head}${gHead}${band}${crown}${medal}${gHand}${frontArms}${over}</g>${zz}</svg>`;
+}
+
+/* ---------- scene data ---------- */
+const MOUNTAINS = [
+  ['Januar','Brocken','Harz',1141], ['Februar','Watzmann','Berchtesgadener Alpen',2713], ['März','Zugspitze','Wettersteingebirge',2962],
+  ['April','Fuji','Japan',3776], ['Mai','Großglockner','Hohe Tauern',3798], ['Juni','Eiger','Berner Alpen',3967],
+  ['Juli','Matterhorn','Walliser Alpen',4478], ['August','Mont Blanc','Montblanc-Massiv',4806], ['September','Kilimandscharo','Tansania',5895],
+  ['Oktober','Denali','Alaska',6190], ['November','Aconcagua','Anden',6961], ['Dezember','Mount Everest','Himalaya',8849],
+];
+const HEIGHT = 5895, BASE_Y = 600, TOP_Y = 70;
+const SPORTS = {laufen:['Laufen','#F0643A'], bouldern:['Bouldern','#9B5DE5'], klettern:['Klettern','#1FAE8C'], workout:['Workout','#E23E6B'], yoga:['Yoga','#3FA7D6']};
+const EXAMPLE = [
+  {id:'anna',  name:'Anna',  avatar:'fuchs',   color:'#FFFFFF', total:820, idle:0, sport:'laufen',   wins:1},
+  {id:'ben',   name:'Ben',   avatar:'panda',   color:'#FF7A45', total:700, idle:1, sport:'klettern', wins:0},
+  {id:'cem',   name:'Cem',   avatar:'pinguin', color:'#FFD23F', total:520, idle:0, sport:'bouldern', wins:3},
+  {id:'fritz', name:'Fritz', avatar:'baer',    color:'#6EEBB0', total:380, idle:9, sport:'workout',  wins:0},
+  {id:'dana',  name:'Dana',  avatar:'einhorn', color:'#FF8FB8', total:260, idle:4, sport:'yoga',     wins:2},
+  {id:'emil',  name:'Emil',  avatar:'roboter', color:'#9EE7FF', total:90,  idle:1, sport:'laufen',   wins:0},
+];
+const TRAIL = [[150,600],[430,560],[300,500],[560,455],[380,395],[600,350],[440,295],[610,245],[480,195],[580,150],[530,110],[540,70]];
+const SEG = TRAIL.slice(1).map((p, i) => Math.hypot(p[0] - TRAIL[i][0], p[1] - TRAIL[i][1]));
+const LEN = SEG.reduce((a, b) => a + b, 0);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function at(t){
+  let d = Math.max(0, Math.min(1, t)) * LEN;
+  for (let i = 0; i < SEG.length; i++) {
+    if (d <= SEG[i] || i === SEG.length - 1) { const f = Math.min(1, d / SEG[i]); return [TRAIL[i][0] + (TRAIL[i+1][0] - TRAIL[i][0]) * f, TRAIL[i][1] + (TRAIL[i+1][1] - TRAIL[i][1]) * f]; }
+    d -= SEG[i];
+  }
+}
+const altOf = y => Math.max(0, Math.min(1, (BASE_Y - y) / (BASE_Y - TOP_Y))) * HEIGHT;
+const fmtM = m => Math.round(m / 10) * 10 === 0 ? '0 m' : (Math.round(m / 10) * 10).toLocaleString('de-DE') + ' m';
+const zoneOf = y => { const a = (BASE_Y - y) / (BASE_Y - TOP_Y); return a >= .70 ? 'schnee' : a >= .37 ? 'fels' : a >= .15 ? 'alm' : 'tal'; };
+function autoTime(){ const h = new Date().getHours(); return h >= 5 && h < 10 ? 'morgen' : h >= 10 && h < 17 ? 'mittag' : h >= 17 && h < 21 ? 'abend' : 'nacht'; }
+
+const S = { time: autoTime(), weather: 'sonnig', mode: 'monat', climbers: EXAMPLE.map(c => ({...c, t: 0})) };
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+
+/* ---------- static decoration ---------- */
+function rng(seed){ return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+(function decorate(){
+  $('#trail').setAttribute('d', 'M' + TRAIL.map(p => p.join(' ')).join(' L'));
+  const r = rng(7); let st = '';
+  for (let i = 0; i < 80; i++) { const x = r() * 1000, y = r() * 340, s = .6 + r() * 1.4; st += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${s.toFixed(2)}" fill="#fff" ${i % 3 ? '' : `class="twinkle" style="animation-delay:-${(r()*3).toFixed(2)}s"`}/>`; }
+  $('#stars').innerHTML = st;
+  const trees = [[40,590],[70,540],[120,560],[200,520],[230,560],[340,590],[460,600],[520,580],[640,560],[700,600],[760,520],[820,560],[880,590],[260,470],[300,450],[720,470],[800,470],[850,500],[180,500],[620,600]];
+  $('#trees').innerHTML = trees.map(([x,y]) => `<path data-f style="fill:var(--tree)" d="M${x} ${y-22} L${x+8} ${y} L${x-8} ${y} Z"/><path d="M${x} ${y} L${x} ${y+4}" stroke="#4A3226" stroke-width="2"/>`).join('');
+  const rl = [];
+  const yOf = m => BASE_Y - m / HEIGHT * (BASE_Y - TOP_Y);
+  rl.push(`<rect x="918" y="34" width="72" height="584" rx="10" fill="rgba(255,255,255,.88)" stroke="#10182A" stroke-width="1.2"/>`);
+  rl.push(`<text x="954" y="52" text-anchor="middle" class="zone-t" fill="#10182A">Höhe in m</text>`);
+  const zones = [['Gletscher', .70, 1, '#F4F8FF', '#10182A'], ['Fels', .37, .70, '#7D8598', '#fff'], ['Alm', .15, .37, '#7CC063', '#10182A'], ['Tal', 0, .15, '#5E9F4C', '#fff']];
+  for (const [n, a, b, c, tc] of zones) {
+    const y1 = BASE_Y - b * (BASE_Y - TOP_Y), y2 = BASE_Y - a * (BASE_Y - TOP_Y);
+    rl.push(`<rect x="966" y="${y1}" width="16" height="${y2 - y1}" fill="${c}" stroke="#10182A" stroke-width="1"/>`);
+    rl.push(`<text transform="translate(977.5 ${(y1 + y2) / 2}) rotate(-90)" text-anchor="middle" class="zone-t" fill="${tc}">${n}</text>`);
+  }
+  for (const m of [0,1000,2000,3000,4000,5000,HEIGHT]) {
+    const y = yOf(m);
+    rl.push(`<path d="M956 ${y} L966 ${y}" stroke="#10182A" stroke-width="1.2"/><text x="954" y="${y + 3.5}" text-anchor="end" class="ruler-t">${m === HEIGHT ? m.toLocaleString('de-DE') : m ? (m/1000) + '.000' : '0'}</text>`);
+  }
+  $('#ruler').innerHTML = rl.join('');
+  $('#mountains').innerHTML = MOUNTAINS.map(([mo, n, reg, h]) => `<tr${mo === 'September' ? ' class="now"' : ''}><td>${mo}</td><td>${n}</td><td>${reg}</td><td class="num">${h.toLocaleString('de-DE')} m</td></tr>`).join('');
+})();
+
+/* ---------- sky & weather ---------- */
+function drawSky(){
+  $('#scene').setAttribute('class', 't-' + S.time);
+  const c = $('#celestial');
+  if (S.time === 'nacht') c.innerHTML = `<circle cx="760" cy="110" r="46" fill="#F4F1DE" opacity=".12"/><circle cx="760" cy="110" r="26" fill="#F4F1DE"/><circle cx="752" cy="102" r="5" fill="#DAD5BC"/><circle cx="768" cy="118" r="3.5" fill="#DAD5BC"/><circle cx="765" cy="99" r="2.4" fill="#DAD5BC"/>`;
+  else {
+    const [x, y, col] = {morgen:[170,250,'#FFD37A'], mittag:[790,100,'#FFE680'], abend:[830,330,'#FF9C5C']}[S.time];
+    c.innerHTML = `<circle cx="${x}" cy="${y}" r="70" fill="${col}" opacity=".2"/><circle cx="${x}" cy="${y}" r="36" fill="${col}"/>`;
+  }
+}
+function cloud(x, y, s, fill, dur, delay){
+  return `<g class="cloud" style="animation-duration:${dur}s;animation-delay:-${delay}s"><g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="46" ry="16" fill="${fill}"/><ellipse cx="-20" cy="-10" rx="22" ry="16" fill="${fill}"/><ellipse cx="14" cy="-16" rx="26" ry="20" fill="${fill}"/></g></g>`;
+}
+function drawWeather(){
+  const night = S.time === 'nacht';
+  const white = night ? '#8E9AB8' : '#FFFFFF', grey = night ? '#6E7A98' : '#DCE2EC', dark = night ? '#5A6584' : '#BCC5D4';
+  let back = '', front = '', w = '';
+  if (S.weather === 'sonnig') { back = cloud(200, 120, .9, white, 40, 5) + cloud(700, 60, .6, white, 50, 20); }
+  if (S.weather !== 'sonnig') {
+    const f = S.weather === 'schnee' ? dark : grey;
+    back = cloud(160, 90, 1.3, f, 38, 3) + cloud(420, 50, 1.1, f, 44, 12) + cloud(760, 80, 1.4, f, 36, 25) + cloud(900, 180, 1, f, 48, 8);
+    front = cloud(300, 260, 1.2, f, 42, 17) + cloud(700, 240, 1, f, 34, 6);
+    w += `<rect x="0" y="330" width="1000" height="90" fill="${night ? '#8E9AB8' : '#fff'}" opacity="${S.weather === 'schnee' ? .18 : .22}"/>`;
+  }
+  if (S.weather === 'schnee') {
+    const r = rng(11);
+    for (let i = 0; i < 110; i++) w += `<circle class="flake" cx="${(r()*1050).toFixed(0)}" cy="0" r="${(1 + r()*1.8).toFixed(1)}" fill="#fff" opacity="${(.6 + r()*.4).toFixed(2)}" style="animation-duration:${(6 + r()*7).toFixed(1)}s;animation-delay:-${(r()*13).toFixed(1)}s"/>`;
+  }
+  $('#clouds-back').innerHTML = back; $('#clouds-front').innerHTML = front; $('#weather').innerHTML = w;
+}
+
+/* ---------- climbers ---------- */
+function ranked(){ return [...S.climbers].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)); }
+function targets(){
+  const r = ranked(), max = r[0].total;
+  return new Map(r.map((c, i) => [c.id, S.mode === 'gipfel' && i === 0 ? 1 : max ? c.total / max * .92 : 0]));
+}
+function stateOf(c, rank, n, t){
+  const [x, y] = at(t), zone = zoneOf(y);
+  const summit = S.mode === 'gipfel' && rank === 0;
+  const sleep = !summit && c.idle >= 3;
+  const lastPlace = !summit && !sleep && rank === n - 1;
+  const pose = summit ? 'cheer' : sleep ? 'tent' : lastPlace ? 'rest' : zone === 'fels' ? 'climb' : 'hike';
+  return {x, y, zone, pose, sleep, snowed: c.idle >= 7, lead: rank === 0 && !sleep, flag: rank === 0 && !sleep, summit};
+}
+function describe(c, st, rank, lead){
+  if (st.summit) return 'Gipfelsieg';
+  if (st.snowed) return 'eingeschneit, seit ' + c.idle + ' Tagen Pause';
+  if (st.sleep) return 'schläft im Zelt, ' + c.idle + ' Tage Pause';
+  if (st.pose === 'rest') return 'macht Brotzeit';
+  if (rank === 0) return 'führt';
+  return {tal:'wandert im Tal', alm:'wandert über die Alm', fels:'klettert im Fels', schnee:'stapft über den Gletscher'}[st.zone];
+}
+const W = 112, H = 34;
+function placeTags(items){
+  const placed = [];
+  const hit = (a) => placed.some(b => a.x < b.x + b.w + 4 && a.x + a.w + 4 > b.x && a.y < b.y + b.h + 3 && a.y + a.h + 3 > b.y);
+  for (const it of items) {
+    const prefer = it.x > 640 ? 'l' : 'r';
+    const opts = [];
+    for (const side of [prefer, prefer === 'l' ? 'r' : 'l']) for (const dy of [0, -38, 38, -76]) opts.push({side, dy});
+    let pick = opts[0];
+    for (const o of opts) {
+      const rect = {x: it.x + (o.side === 'r' ? 20 : -20 - W), y: it.y - 50 + o.dy, w: W, h: H};
+      if (!hit(rect) && rect.x > 4 && rect.x + W < 912) { pick = o; break; }
+    }
+    const rect = {x: it.x + (pick.side === 'r' ? 20 : -20 - W), y: it.y - 50 + pick.dy, w: W, h: H};
+    placed.push(rect); it.tag = {dx: rect.x - it.x, dy: rect.y - it.y};
+  }
+}
+const groups = new Map();
+let animating = null;
+function render(animate = true){
+  const r = ranked(), T = targets(), n = r.length, topAlt = altOf(at(T.get(r[0].id))[1]);
+  const items = r.map((c, i) => { const st = stateOf(c, i, n, T.get(c.id)); return {c, i, st, x: st.x, y: st.y}; });
+  placeTags(items.slice().sort((a, b) => a.i - b.i));
+  const box = $('#climbers');
+  for (const it of items) {
+    const {c, i, st} = it;
+    let g = groups.get(c.id);
+    if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'climber'); groups.set(c.id, g); box.appendChild(g); const p = at(c.t); g.setAttribute('transform', `translate(${p[0]} ${p[1]})`); }
+    const fig = figureSVG({uid: c.id, avatar: c.avatar, color: c.color, wins: c.wins, pose: st.pose, lead: st.lead, sleep: st.sleep, snowed: st.snowed, gear: st.zone, pack: SPORTS[c.sport][1], lamp: S.time === 'nacht', flag: st.flag})
+      .replace('<svg ', '<svg x="-29" y="-56" width="54" height="59" overflow="visible" ');
+    const alt = altOf(st.y);
+    const gap = i === 0 ? (st.summit ? 'Gipfelsieg!' : 'führt') : `−${fmtM(topAlt - alt)}`;
+    const leadTag = i === 0;
+    const tag = `<g transform="translate(${it.tag.dx} ${it.tag.dy})"><rect width="${W}" height="${H}" rx="7" fill="${leadTag ? '#F5B82E' : 'rgba(255,255,255,.94)'}" stroke="#10182A" stroke-width="1.2"/>
+      <text x="8" y="14" class="tn">${c.name}</text><text x="${W-8}" y="14" text-anchor="end" class="ta">${fmtM(alt)}</text>
+      <text x="8" y="28" class="tg">${gap}</text></g>`;
+    g.innerHTML = fig + tag;
+    it.g = g;
+  }
+  // draw lower climbers in front
+  items.slice().sort((a, b) => a.y - b.y).forEach(it => box.appendChild(it.g));
+  // move along the trail
+  const from = new Map(S.climbers.map(c => [c.id, c.t]));
+  const to = T;
+  const dur = animate && !REDUCED ? 1400 : 0, t0 = performance.now();
+  if (animating) cancelAnimationFrame(animating);
+  const step = now => {
+    const k = dur ? Math.min(1, (now - t0) / dur) : 1, e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+    for (const c of S.climbers) { const t = from.get(c.id) + (to.get(c.id) - from.get(c.id)) * e; const [x, y] = at(t); groups.get(c.id).setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`); }
+    if (k < 1) animating = requestAnimationFrame(step); else { animating = null; S.climbers.forEach(c => c.t = to.get(c.id)); }
+  };
+  animating = requestAnimationFrame(step);
+  renderRoster(items, topAlt);
+  drawFx();
+}
+function renderRoster(items, topAlt){
+  $('#roster').innerHTML = items.map(({c, i, st}) => `<div class="who"><i style="background:${SPORTS[c.sport][1]}"></i>
+    <div><b>${i + 1}. ${c.name} · ${fmtM(altOf(st.y))}</b><span>${describe(c, st, i)} · zuletzt ${SPORTS[c.sport][0]}</span></div>
+    <button data-add="${c.id}" aria-label="${c.name} eine Stunde Training eintragen">+60 min</button></div>`).join('');
+  document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => addTraining(b.dataset.add));
+}
+function addTraining(id){
+  const before = ranked().map(c => c.id);
+  const c = S.climbers.find(x => x.id === id); c.total += 60; c.idle = 0;
+  if (S.mode === 'gipfel') setMode('monat', false);
+  render();
+  const after = ranked().map(x => x.id), ni = after.indexOf(id), oi = before.indexOf(id);
+  if (ni < oi) banner(`${c.name} zieht an ${S.climbers.find(x => x.id === before[ni]).name} vorbei!`);
+}
+function banner(text, stay = false){
+  const w = Math.min(760, 60 + text.length * 13.5);
+  $('#banner').innerHTML = `<g class="banner${stay ? ' stay' : ''}"><rect x="${460 - w/2}" y="14" width="${w}" height="44" rx="10" fill="#F5B82E" stroke="#10182A" stroke-width="2"/><text x="460" y="45" text-anchor="middle" class="bn">${text}</text></g>`;
+}
+function drawFx(){
+  if (S.mode !== 'gipfel') { $('#fx').innerHTML = ''; return; }
+  const cols = ['#F5B82E','#FF8FB8','#6EEBB0','#9EE7FF','#FF7A45'];
+  $('#fx').innerHTML = [[360,110,0],[700,90,.6],[250,210,1.1],[820,220,.3],[560,24,.9]].map(([x,y,d], k) => {
+    let rays = ''; for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; rays += `<path d="M${x + Math.cos(a)*8} ${y + Math.sin(a)*8} L${x + Math.cos(a)*44} ${y + Math.sin(a)*44}" stroke="${cols[(i + k) % cols.length]}" stroke-width="3" stroke-linecap="round"/>`; }
+    return `<g class="burst" style="animation-delay:${d}s">${rays}</g>`;
+  }).join('');
+}
+
+/* ---------- controls ---------- */
+function seg(el, opts, cur, fn){
+  el.innerHTML = opts.map(([v, l]) => `<button data-v="${v}" aria-pressed="${v === cur}">${l}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.onclick = () => fn(b.dataset.v));
+}
+function setTime(v){ S.time = v; drawSky(); drawWeather(); render(false); drawControls(); }
+function setWeather(v){ S.weather = v; drawWeather(); drawControls(); }
+function setMode(v, rerender = true){
+  S.mode = v; drawControls();
+  if (v === 'gipfel') banner(`Gipfelsieg September: ${ranked()[0].name}!`, true); else $('#banner').innerHTML = '';
+  if (rerender) render();
+}
+function drawControls(){
+  seg($('#ctlTime'), [['morgen','Morgen'],['mittag','Mittag'],['abend','Abend'],['nacht','Nacht']], S.time, setTime);
+  seg($('#ctlWeather'), [['sonnig','Sonnig'],['wolken','Bewölkt'],['schnee','Schneefall']], S.weather, setWeather);
+  seg($('#ctlMode'), [['monat','Laufender Monat'],['gipfel','Gipfeltag am Monatsende']], S.mode, setMode);
+}
+$('#reset').onclick = () => { S.climbers = EXAMPLE.map(c => ({...c, t: S.climbers.find(x => x.id === c.id)?.t || 0})); S.mode = 'monat'; $('#banner').innerHTML = ''; drawControls(); render(); };
+
+drawSky(); drawWeather(); drawControls(); render();
+</script>

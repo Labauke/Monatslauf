@@ -1,0 +1,855 @@
+<title>Monatslauf</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EEF2F7; --surface:#FFFFFF; --surface-2:#F5F7FB; --ink:#101B33; --muted:#5A6781; --line:#D5DCE7;
+  --track:#2451B8; --track-2:#1F47A3; --lane-line:rgba(255,255,255,.5); --on-track:#FFFFFF;
+  --accent:#2451B8; --accent-ink:#FFFFFF; --gold:#F5B82E; --danger:#C2344D; --ok:#1B8A5A;
+  --shadow:0 1px 2px rgba(16,27,51,.06),0 6px 20px rgba(16,27,51,.07);
+  --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0B1220; --surface:#131C30; --surface-2:#18233B; --ink:#E8EDF6; --muted:#95A2BA; --line:#26324A;
+    --track:#1D3E8C; --track-2:#193578; --lane-line:rgba(255,255,255,.35);
+    --accent:#86A8FF; --accent-ink:#0B1220; --danger:#FF6F86; --ok:#4FD08F;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0B1220; --surface:#131C30; --surface-2:#18233B; --ink:#E8EDF6; --muted:#95A2BA; --line:#26324A;
+  --track:#1D3E8C; --track-2:#193578; --lane-line:rgba(255,255,255,.35);
+  --accent:#86A8FF; --accent-ink:#0B1220; --danger:#FF6F86; --ok:#4FD08F;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:28px 60px;display:flex;flex-direction:column;gap:24px}
+html{-webkit-text-size-adjust:100%}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* header */
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.brand h1{font-family:var(--display);font-weight:800;font-size:clamp(40px,7vw,64px);line-height:.9;margin:0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+.brand p{margin:6px 0 0;color:var(--muted)}
+.who{display:flex;align-items:center;gap:10px;font-weight:600}
+.who .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+/* month bar */
+.monthbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;justify-content:space-between}
+.monthnav{display:flex;align-items:center;gap:8px}
+.monthnav h2{font-family:var(--display);font-weight:700;font-size:30px;margin:0;min-width:9ch;text-align:center;text-transform:uppercase;letter-spacing:.02em}
+.iconbtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:18px;line-height:1}
+.iconbtn:disabled{opacity:.35;cursor:default}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-weight:600;font-size:13px;background:var(--surface);border:1px solid var(--line)}
+.pill.hot{background:var(--gold);border-color:var(--gold);color:#1a1405}
+.pill.done{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* stadium */
+.stadium{position:relative;background:var(--track);border-radius:18px;padding:14px 14px 16px;box-shadow:var(--shadow);color:var(--on-track);overflow:hidden;--labelw:170px;--fw:64px;scroll-margin-top:12px}
+.stadium h3{font-family:var(--display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.03em;margin:0 4px 8px}
+.scale{display:flex;justify-content:space-between;margin-left:var(--labelw);margin-right:8px;font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;opacity:.75;padding-bottom:4px}
+.lanes{position:relative}
+.lane{display:grid;grid-template-columns:var(--labelw) 1fr;align-items:stretch;border-top:2px solid var(--lane-line);position:relative}
+.lane:last-child{border-bottom:2px solid var(--lane-line)}
+.lane .label{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:10px 12px 10px 4px;min-width:0}
+.lane .nm{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:16px;min-width:0}
+.lane .nm b{font-family:var(--display);font-size:22px;font-weight:800;opacity:.6;width:1.1em;flex:none}
+.lane .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lane .meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;font-weight:600;opacity:.9}
+.streak{display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.16);border-radius:999px;padding:0 7px 0 4px}
+.streak svg{width:11px;height:14px}
+.run{position:relative;height:94px;margin-right:8px;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(255,255,255,.07) calc(10% - 1px) 10%)}
+.trail{position:absolute;left:0;bottom:8px;height:14px;width:calc((100% - var(--fw)) * var(--p) + 20px);transition:width 900ms cubic-bezier(.2,.8,.2,1);opacity:.9;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cellipse cx='5' cy='4' rx='3.3' ry='2.1'/%3E%3Cellipse cx='16' cy='10' rx='3.3' ry='2.1'/%3E%3C/svg%3E") left center/22px 14px repeat-x;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cellipse cx='5' cy='4' rx='3.3' ry='2.1'/%3E%3Cellipse cx='16' cy='10' rx='3.3' ry='2.1'/%3E%3C/svg%3E") left center/22px 14px repeat-x}
+.runner-wrap{position:absolute;bottom:2px;left:calc((100% - var(--fw)) * var(--p));width:var(--fw);transition:left 900ms cubic-bezier(.2,.8,.2,1)}
+.fig svg{width:var(--fw);height:calc(var(--fw) * 1.094);display:block;overflow:visible}
+.bubble{position:absolute;bottom:22px;left:calc(var(--fw) + 2px);white-space:nowrap;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.02em;background:rgba(0,0,0,.3);padding:0 8px;border-radius:6px}
+.runner-wrap.far .bubble{left:auto;right:calc(var(--fw) + 2px)}
+.leadtag{background:var(--gold);color:#1a1405;border-radius:4px;padding:0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:none}
+.me-lane{background:rgba(255,255,255,.07)}
+.example{opacity:.6}
+.example .nm span::after{content:" · Beispiel";font-weight:500;font-size:12px}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 4px 0;font-size:13px;opacity:.9}
+.legend-row span{display:inline-flex;align-items:center;gap:6px}
+.legend-row i{display:inline-block;width:10px;height:10px;border-radius:50%}
+.stadium-note{margin:8px 4px 0;font-size:13px;opacity:.85}
+
+/* overtake flash */
+.flash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;background:var(--gold);color:#1a1405;font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,48px);text-transform:uppercase;letter-spacing:.02em;padding:8px 24px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;animation:flash 3.2s ease forwards;pointer-events:none}
+@keyframes flash{0%{transform:translate(-50%,-50%) scale(.3) rotate(-6deg);opacity:0}12%{transform:translate(-50%,-50%) scale(1.08) rotate(-2deg);opacity:1}20%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1) rotate(-2deg)}}
+
+/* figure animations */
+.fig .limb{transform-box:view-box}
+.p-run .l1,.p-run .a2{animation:swing .55s ease-in-out infinite alternate}
+.p-run .l2,.p-run .a1{animation:swing .55s ease-in-out infinite alternate-reverse}
+.p-run .bob{animation:bob .275s ease-in-out infinite alternate}
+.p-climb .bob{animation:climb 1.1s ease-in-out infinite alternate}
+.p-climb .c1{transform-origin:24px 19px;animation:reach 1.1s ease-in-out infinite alternate}
+.p-workout .bob{animation:press .7s ease-in-out infinite alternate}
+.p-yoga .bob{transform-origin:24px 48px;transform-box:view-box;animation:breathe 2.4s ease-in-out infinite alternate}
+.p-sofa .munch{transform-origin:22px 26px;transform-box:view-box;animation:munch 1.4s ease-in-out infinite}
+.p-cheer .bob{animation:jump .5s ease-in-out infinite alternate}
+.idle .limb,.idle .bob,.idle .munch{animation:none!important}
+.speed path{animation:speed .45s linear infinite}
+.speed path:nth-child(2){animation-delay:-.15s}.speed path:nth-child(3){animation-delay:-.3s}
+.tail{transform-box:view-box;animation:swing .55s ease-in-out infinite alternate;animation-duration:.55s}
+.idle .tail{animation:none}
+@keyframes speed{from{transform:translateX(6px);opacity:0}40%{opacity:.8}to{transform:translateX(-8px);opacity:0}}
+.flames{transform-origin:10px 44px;transform-box:view-box;animation:flicker .18s ease-in-out infinite alternate}
+.zz text{font-family:var(--display);font-weight:800;fill:#fff;opacity:0;animation:zz 2.4s ease-in-out infinite}
+.zz text:nth-child(2){animation-delay:.6s}.zz text:nth-child(3){animation-delay:1.2s}
+@keyframes swing{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-1.5px)}}
+@keyframes climb{from{transform:translateY(2px)}to{transform:translateY(-2px)}}
+@keyframes reach{from{transform:rotate(0)}to{transform:rotate(-12deg)}}
+@keyframes press{from{transform:translateY(0)}to{transform:translateY(3px)}}
+@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.05)}}
+@keyframes munch{0%,60%,100%{transform:rotate(0)}75%{transform:rotate(-35deg)}}
+@keyframes jump{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@keyframes flicker{from{transform:scaleX(.8)}to{transform:scaleX(1.15)}}
+@keyframes zz{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:0;transform:translateY(-5px)}}
+
+/* podium */
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;padding-top:12px}
+.pcol{display:flex;flex-direction:column;align-items:center;gap:4px;width:min(30%,150px)}
+.pname{font-weight:700;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pfig{animation:drop .6s cubic-bezier(.3,1.4,.5,1) backwards}
+.pblock{width:100%;background:rgba(255,255,255,.16);border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:6px;transform-origin:bottom;animation:rise .7s cubic-bezier(.2,.8,.2,1) backwards}
+.pblock b{font-family:var(--display);font-size:40px;font-weight:800;line-height:1}
+.pblock span{font-family:var(--display);font-size:17px;font-weight:600;opacity:.9}
+.pl1 .pblock{height:120px;background:var(--gold);color:#1a1405;animation-delay:.9s}.pl1 .pfig{animation-delay:1.5s}
+.pl2 .pblock{height:88px;animation-delay:.5s}.pl2 .pfig{animation-delay:1.1s}
+.pl3 .pblock{height:64px;animation-delay:.1s}.pl3 .pfig{animation-delay:.7s}
+.prest{list-style:none;margin:12px 4px 0;padding:0;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14px;opacity:.9;justify-content:center}
+@keyframes rise{from{transform:scaleY(0)}}
+@keyframes drop{from{transform:translateY(-40px);opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .fig *,.pfig,.pfig *,.pblock,.flash{animation:none!important}
+  .runner-wrap,.trail{transition:none}
+}
+
+/* lower grid */
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-margin-top:12px}
+.card h3{font-family:var(--display);font-weight:700;font-size:24px;text-transform:uppercase;letter-spacing:.02em;margin:0}
+.field{display:flex;flex-direction:column;gap:8px}
+.field > label,.field > .lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 14px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .sw{width:10px;height:10px;border-radius:50%}
+.chip.big{font-family:var(--display);font-size:22px;font-weight:700;padding:4px 16px;min-width:64px;justify-content:center}
+.chip.big small{font-family:var(--body);font-size:12px;font-weight:600;opacity:.7}
+input[type=date],input[type=number],input[type=text]{padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface-2)}
+input[type=number]{width:90px}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:12px 20px;font-weight:700;font-size:16px}
+.primary:disabled{opacity:.45;cursor:default}
+.summary{color:var(--muted);font-size:14px;margin:0}
+.colors{display:flex;gap:8px;flex-wrap:wrap}
+.colors button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
+.colors button[aria-pressed="true"]{border-color:var(--ink)}
+.side{display:flex;flex-direction:column;gap:24px}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.feed li{display:grid;grid-template-columns:10px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.feed li:first-child{border-top:0}
+.feed .sw{width:10px;height:10px;border-radius:50%}
+.feed .min{font-family:var(--display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.feed .del{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+.feed .del:hover{color:var(--danger)}
+.muted{color:var(--muted)}
+.hall{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.hall li{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:14px}
+.hall .m{font-family:var(--display);font-weight:700;font-size:18px;text-transform:uppercase}
+.legend{font-size:13px;color:var(--muted);margin:0}
+.banner{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:600;box-shadow:var(--shadow);z-index:10;max-width:calc(100% - 32px)}
+.avatars{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.avatars button{border:2px solid transparent;background:var(--track);color:#fff;border-radius:12px;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;letter-spacing:.02em}
+.avatars button:hover{border-color:rgba(255,255,255,.5)}
+.avatars button[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.avatars svg{width:52px;height:57px;display:block;overflow:visible}
+.whofig{display:inline-block;width:34px;height:37px;background:var(--track);border-radius:10px;padding:2px}
+.whofig svg{width:100%;height:100%;display:block;overflow:visible}
+.row-btns{display:flex;flex-wrap:wrap;gap:10px}
+.secondary{background:transparent;border:1.5px solid var(--line);border-radius:12px;padding:12px 20px;font-weight:700;font-size:16px}
+.who{flex-wrap:wrap}
+.players-quick{display:flex;flex-wrap:wrap;gap:8px}
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:20}
+.fab{display:none}
+
+@media (max-width:760px){
+  .wrap{padding-inline:16px;padding-block:18px 112px;gap:18px}
+  .brand h1{font-size:44px}
+  .brand p{font-size:14px}
+  header{gap:12px}
+  .who{width:100%;gap:8px 14px}
+  .who .linkbtn{padding:10px 0}
+  .monthbar{gap:10px}
+  .monthnav{width:100%;justify-content:space-between}
+  .monthnav h2{font-size:26px}
+  .iconbtn{width:44px;height:44px;font-size:22px}
+  .grid{grid-template-columns:1fr;gap:18px}
+  .side{gap:18px}
+  .stadium{--labelw:0px;--fw:54px;padding:10px 10px 14px;border-radius:14px}
+  .lane{grid-template-columns:1fr}
+  .lane .label{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 10px;padding:8px 4px 0}
+  .lane .nm{font-size:15px}
+  .scale{margin-left:0;font-size:12px}
+  .run{height:78px;margin-right:0}
+  .bubble{font-size:16px;bottom:18px;padding:0 6px}
+  .legend-row{font-size:12px;gap:4px 12px}
+  .flash{white-space:normal;text-align:center;font-size:26px;line-height:1.05;width:calc(100% - 24px);padding:10px 14px}
+  .pblock b{font-size:30px}
+  .card{padding:16px;gap:14px}
+  .chips{gap:8px}
+  .chip{min-height:44px;padding:8px 14px}
+  .chip.big{min-height:48px;flex:1 1 calc(33.333% - 8px);font-size:22px}
+  input[type=date],input[type=number],input[type=text]{font-size:16px;min-height:44px}
+  #dateIn{flex:1 1 150px}
+  #minIn{flex:1 1 100%;width:auto}
+  .primary,.secondary{width:100%;min-height:52px;font-size:17px}
+  .colors button{width:40px;height:40px}
+  .avatars{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+  .feed li{padding:6px 0}
+  .feed .del{min-width:44px;min-height:40px}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .fab{display:flex;align-items:center;justify-content:center;gap:8px;position:fixed;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:9;min-height:54px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:17px;box-shadow:0 8px 24px rgba(16,27,51,.3)}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Monatslauf</h1>
+      <p>Wer bewegt sich diesen Monat am meisten? Jede Trainingsminute bringt dich weiter nach vorn.</p>
+    </div>
+    <div class="who" id="who"></div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="stadium" id="ceremony" hidden aria-label="Siegerehrung"></section>
+
+  <div class="monthbar">
+    <div class="monthnav">
+      <button class="iconbtn" id="prevM" aria-label="Vorheriger Monat">‹</button>
+      <h2 id="monthTitle">–</h2>
+      <button class="iconbtn" id="nextM" aria-label="Nächster Monat">›</button>
+    </div>
+    <div id="deadline"></div>
+  </div>
+
+  <section class="stadium" id="stadium" aria-label="Rennbahn">
+    <div class="scale" id="scale"><span>Start</span><span>Spitze</span></div>
+    <div class="lanes" id="lanes"></div>
+    <div id="podium" hidden></div>
+    <div class="legend-row" id="legendRow"></div>
+    <p class="stadium-note" id="stadiumNote"></p>
+  </section>
+
+  <div class="grid">
+    <div class="card" id="entryCard"></div>
+    <div class="side">
+      <div class="card">
+        <h3>Letzte Einträge</h3>
+        <ul class="feed" id="feed"></ul>
+      </div>
+      <div class="card">
+        <h3>Siegerliste</h3>
+        <ul class="hall" id="hall"></ul>
+        <p class="legend">Siege verändern dein Männchen: 1 Sieg bringt ein goldenes Stirnband, 2 Siege eine Medaille, ab 3 Siegen trägst du die Krone.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<button class="fab" id="fab" hidden>Training eintragen</button>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const SPORTS = [
+  {id:'laufen',   label:'Laufen',   color:'#F0643A', pose:'run'},
+  {id:'bouldern', label:'Bouldern', color:'#9B5DE5', pose:'climb'},
+  {id:'klettern', label:'Klettern', color:'#1FAE8C', pose:'climb'},
+  {id:'workout',  label:'Workout',  color:'#E23E6B', pose:'workout'},
+  {id:'yoga',     label:'Yoga',     color:'#3FA7D6', pose:'yoga'},
+  {id:'anderes',  label:'Anderes',  color:'#8C96A8', pose:'run'},
+];
+const SPORT = Object.fromEntries(SPORTS.map(s=>[s.id,s]));
+const DURATIONS = [15,30,45,60,90,120];
+const PCOLORS = ['#FF7A45','#FFD23F','#FFFFFF','#6EEBB0','#FF8FB8','#C9F26B','#FFB4F0','#9EE7FF'];
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const LEAD_POS = 0.88;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = () => ymd(new Date());
+const daysAgo = n => { const d = new Date(); d.setDate(d.getDate()-n); return ymd(d); };
+const mkey = s => s.slice(0,7);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const monthName = k => { const [y,m] = k.split('-').map(Number); return `${MONTHS[m-1]} ${y}`; };
+const shiftMonth = (k,n) => { const [y,m] = k.split('-').map(Number); const d = new Date(y, m-1+n, 1); return `${d.getFullYear()}-${pad(d.getMonth()+1)}`; };
+const lastDayOf = k => { const [y,m] = k.split('-').map(Number); return new Date(y, m, 0); };
+const fmtMin = m => { const h = Math.floor(m/60), r = m%60; return h ? (r ? `${h} h ${r} min` : `${h} h`) : `${r} min`; };
+const fmtDate = s => { const [y,m,d] = s.split('-').map(Number); const dt = new Date(y,m-1,d); return `${WD[dt.getDay()]}, ${d}.${m}.`; };
+const dayDiff = (a, b) => { const p = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }; return Math.round((p(b) - p(a)) / 864e5); };
+const slug = s => s.trim().toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40);
+function lsGet(k){ try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch {} }
+
+/* ---------- storage: shared db when available, this browser otherwise ---------- */
+function remoteStore(db){
+  return {
+    shared: true,
+    subscribe: (c, cb, err) => db.collection(c).onSnapshot(s => cb(s.docs.map(d => ({id:d.id, ...d.data()}))), err),
+    set: (c, id, v) => db.doc(`${c}/${id}`).set(v),
+    add: (c, v) => db.collection(c).add(v),
+    del: (c, id) => db.doc(`${c}/${id}`).delete(),
+  };
+}
+function localStore(){
+  const KEY = 'monatslauf.local';
+  let data; try { data = JSON.parse(lsGet(KEY)) } catch {}
+  data = data || {players:{}, entries:{}};
+  const subs = {};
+  const emit = c => (subs[c]||[]).forEach(cb => cb(Object.entries(data[c]||{}).map(([id,v]) => ({id, ...v}))));
+  const save = () => lsSet(KEY, JSON.stringify(data));
+  return {
+    shared: false,
+    subscribe(c, cb){ (subs[c] ||= []).push(cb); setTimeout(() => emit(c)); return () => {}; },
+    async set(c, id, v){ (data[c] ||= {})[id] = v; save(); emit(c); },
+    async add(c, v){ return this.set(c, Date.now().toString(36) + Math.random().toString(36).slice(2,6), v); },
+    async del(c, id){ delete (data[c]||{})[id]; save(); emit(c); },
+  };
+}
+
+/* ---------- state ---------- */
+const S = {
+  store: null, loaded: {players:false, entries:false},
+  players: {}, entries: [],
+  me: lsGet('monatslauf.me'),
+  view: mkey(today()),
+  form: {date: today(), minutes: 60, sport: null, custom: false},
+  login: {name: '', color: PCOLORS[0], avatar: 'fuchs'}, editAvatar: null,
+  busy: false, readOnly: false, rankSnapshot: null, cheered: new Set(),
+};
+const current = () => mkey(today());
+
+/* ---------- derived ---------- */
+function totals(month){
+  const t = {};
+  for (const e of S.entries) {
+    if (mkey(e.date) !== month) continue;
+    const r = t[e.player] ||= {total:0, count:0};
+    r.total += e.minutes; r.count++;
+  }
+  return t;
+}
+function winners(){
+  const months = [...new Set(S.entries.map(e => mkey(e.date)))].filter(m => m < current()).sort().reverse();
+  return months.map(m => {
+    const t = totals(m); const max = Math.max(0, ...Object.values(t).map(r => r.total));
+    return {month: m, max, ids: Object.keys(t).filter(id => t[id].total === max && max > 0)};
+  }).filter(w => w.ids.length);
+}
+function winCounts(){ const c = {}; for (const w of winners()) for (const id of w.ids) c[id] = (c[id]||0) + 1; return c; }
+const pname = id => S.players[id]?.name || id;
+const byTime = (a,b) => a.date.localeCompare(b.date) || (a.created||0) - (b.created||0);
+function playerStats(id, p, month){
+  const mine = S.entries.filter(e => e.player === id).sort(byTime);
+  const inMonth = mine.filter(e => mkey(e.date) === month);
+  const segs = [];
+  for (const e of inMonth) { const l = segs[segs.length-1]; l && l.sport === e.sport ? l.min += e.minutes : segs.push({sport:e.sport, min:e.minutes}); }
+  const last = mine[mine.length-1];
+  const idle = last ? dayDiff(last.date, today()) : (p.created ? Math.floor((Date.now() - p.created) / 864e5) : 0);
+  const days = new Set(mine.map(e => e.date));
+  let d = new Date(); if (!days.has(ymd(d))) d.setDate(d.getDate()-1);
+  let streak = 0; while (days.has(ymd(d))) { streak++; d.setDate(d.getDate()-1); }
+  return {segs, lastSport: inMonth.length ? inMonth[inMonth.length-1].sport : null, idle, streak};
+}
+function rankedRows(month){
+  const t = totals(month); const wc = winCounts();
+  return Object.entries(S.players).map(([id,p]) => ({
+    id, name:p.name, color:p.color, avatar:p.avatar, total:t[id]?.total||0, count:t[id]?.count||0, wins:wc[id]||0, ...playerStats(id, p, month),
+  })).sort((a,b) => b.total - a.total || a.name.localeCompare(b.name));
+}
+const EXAMPLES = [
+  {id:'x1', name:'Anna', avatar:'fuchs', color:PCOLORS[2], total:640, count:9, wins:0, segs:[{sport:'laufen',min:200},{sport:'yoga',min:180},{sport:'laufen',min:260}], lastSport:'laufen', idle:0, streak:4},
+  {id:'x2', name:'Ben',  avatar:'panda', color:PCOLORS[0], total:420, count:5, wins:0, segs:[{sport:'klettern',min:240},{sport:'workout',min:180}], lastSport:'bouldern', idle:1, streak:0},
+  {id:'x3', name:'Cem',  avatar:'pinguin', color:PCOLORS[1], total:150, count:3, wins:0, segs:[{sport:'workout',min:90},{sport:'laufen',min:60}], lastSport:'workout', idle:4, streak:0},
+];
+
+/* ---------- figure ---------- */
+const OUT = '#10182A';
+function shade(hex, k){ const n = parseInt(hex.slice(1), 16); const f = c => Math.round(c * (1 - k)); return `rgb(${f(n>>16&255)},${f(n>>8&255)},${f(n&255)})`; }
+function hairStyle(id){ let h = 7; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h) % 5; }
+const POSES = {
+  run:     {head:[25,8.5], S:[24.2,17.5], H:[21,31], face:'side', shadow:true,
+            arms:[{pts:[[23,19],[16,24.5],[19,30]], cls:'a1', back:true}, {pts:[[23,19],[29.5,23],[33.5,18.5]], cls:'a2'}],
+            legs:[{pts:[[21,31],[15.5,38.5],[10.5,43]], cls:'l1', back:true}, {pts:[[21,31],[26.5,38.5],[25,47]], cls:'l2'}]},
+  climb:   {head:[24,9.5], S:[24,17], H:[24,31], face:'back',
+            arms:[{pts:[[24,19],[17,13],[15.5,4]], cls:'c1'}, {pts:[[24,19],[31,15],[33.5,9.5]]}],
+            legs:[{pts:[[24,31],[17.5,37],[17.5,45.5]]}, {pts:[[24,31],[30.5,38],[32.5,44.5]]}]},
+  workout: {head:[24,11], S:[24,18.5], H:[24,33], face:'front', shadow:true,
+            arms:[{pts:[[24,20.5],[15,14],[14,1.5]]}, {pts:[[24,20.5],[33,14],[34,1.5]]}],
+            legs:[{pts:[[24,33],[18,40],[17,48]]}, {pts:[[24,33],[30,40],[31,48]]}]},
+  yoga:    {head:[24,10], S:[24,18], H:[24,33], face:'front',
+            arms:[{pts:[[24,20],[14,12],[21,-2.5]]}, {pts:[[24,20],[34,12],[27,-2.5]]}],
+            legs:[{pts:[[24,33],[24,47.5]]}, {pts:[[24,33],[32,38],[25,40.5]], noShoe:true}]},
+  cheer:   {head:[24,9], S:[24,17], H:[24,31], face:'front', shadow:true,
+            arms:[{pts:[[24,19],[16.5,12],[13.5,2]]}, {pts:[[24,19],[31.5,12],[34.5,2]]}],
+            legs:[{pts:[[24,31],[19,40],[17,48]]}, {pts:[[24,31],[29,40],[31,48]]}]},
+  sofa:    {head:[22,15.5], S:[22,23], H:[21,35], face:'front',
+            arms:[{pts:[[22,26],[15,32]], back:true}, {pts:[[22,26],[28,31],[30.5,27.5]], cls:'munch'}],
+            legs:[{pts:[[21,35],[32,35],[33,46]]}]},
+};
+const pathOf = pts => 'M' + pts.map(p => p.join(' ')).join(' L');
+const CHARACTERS = [
+  {id:'fuchs',   label:'Fuchs',   fur:'#F07A2E'},
+  {id:'baer',    label:'Bär',     fur:'#8B5A3C'},
+  {id:'panda',   label:'Panda',   fur:'#FFFFFF', limbs:'#23283A'},
+  {id:'katze',   label:'Katze',   fur:'#9AA3B5'},
+  {id:'hase',    label:'Hase',    fur:'#F3EEF3'},
+  {id:'frosch',  label:'Frosch',  fur:'#6CCB5F', eyeDy:-6, crown:10.5},
+  {id:'einhorn', label:'Einhorn', fur:'#FFFFFF'},
+  {id:'tiger',   label:'Tiger',   fur:'#F59A23'},
+  {id:'pinguin', label:'Pinguin', fur:'#23283A', noMouth:true},
+  {id:'roboter', label:'Roboter', fur:'#BFC8D6', led:true, square:true},
+];
+const CHAR = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
+const avatarOf = (id, avatar) => CHAR[avatar] || CHARACTERS[hairStyle(id) % CHARACTERS.length];
+function charParts(ch, hx, hy, view, ex, ey){
+  const f = ch.fur, s = `stroke="${OUT}" stroke-width="1.1" stroke-linejoin="round"`, face = view !== 'back';
+  const fx = view === 'side' ? hx + 2.8 : hx;
+  const nose = (c = OUT) => `<ellipse cx="${fx}" cy="${hy+1.6}" rx="1.4" ry="1" fill="${c}"/>`;
+  const roundEars = (outer, inner) => [-1,1].map(k => `<circle cx="${hx+k*6}" cy="${hy-6}" r="3.3" fill="${outer}" ${s}/><circle cx="${hx+k*6}" cy="${hy-6}" r="1.6" fill="${inner}"/>`).join('');
+  const cheeks = c => [-1,1].map(k => `<circle cx="${fx+k*4.6}" cy="${hy+2.6}" r="1.4" fill="${c}" opacity=".8"/>`).join('');
+  let behind = '', fur = '', mark = '', top = '';
+  switch (ch.id) {
+    case 'fuchs':
+      behind = `<path d="M${hx-6.8} ${hy-2.5} L${hx-8} ${hy-13.5} L${hx-1.5} ${hy-6.8}Z" fill="${f}" ${s}/><path d="M${hx+1.5} ${hy-6.8} L${hx+8} ${hy-13.5} L${hx+6.8} ${hy-2.5}Z" fill="${f}" ${s}/><path d="M${hx-7.8} ${hy-11.3} L${hx-8} ${hy-13.5} L${hx-6} ${hy-12.1}Z M${hx+6} ${hy-12.1} L${hx+8} ${hy-13.5} L${hx+7.8} ${hy-11.3}Z" fill="#2A2238"/>`;
+      mark = `<path d="M${fx-7} ${hy+.5} Q${fx} ${hy+4} ${fx+7} ${hy+.5} L${fx+7} ${hy+9} L${fx-7} ${hy+9}Z" fill="#fff"/>` + nose(); break;
+    case 'baer':
+      behind = roundEars(f, '#D9A77A');
+      mark = `<ellipse cx="${fx}" cy="${hy+3}" rx="4.2" ry="3.2" fill="#D9A77A"/>` + nose(); break;
+    case 'panda':
+      behind = roundEars('#23283A', '#23283A');
+      mark = ex.map((x, i) => `<ellipse cx="${x}" cy="${ey+.3}" rx="2.9" ry="3.5" transform="rotate(${i ? 25 : -25} ${x} ${ey})" fill="#23283A"/>`).join('') + nose(); break;
+    case 'katze':
+      behind = [-1,1].map(k => `<path d="M${hx+k*7} ${hy-3} L${hx+k*6.6} ${hy-12.5} L${hx+k*1.5} ${hy-7}Z" fill="${f}" ${s}/><path d="M${hx+k*6} ${hy-5} L${hx+k*5.9} ${hy-10} L${hx+k*3.2} ${hy-7}Z" fill="#FF8FB8"/>`).join('');
+      fur = `<path d="M${hx-1.6} ${hy-7.6} L${hx-1.2} ${hy-5} M${hx+1.6} ${hy-7.6} L${hx+1.2} ${hy-5}" stroke="#6F788C" stroke-width="1.2" stroke-linecap="round"/>`;
+      mark = `<path d="M${fx-1.4} ${hy+1} L${fx+1.4} ${hy+1} L${fx} ${hy+2.4}Z" fill="#FF8FB8"/>`;
+      if (face) top = `<path d="M${fx-3} ${hy+2.2} L${fx-9.5} ${hy+1.2} M${fx-3} ${hy+3} L${fx-9.5} ${hy+3.8} M${fx+3} ${hy+2.2} L${fx+9.5} ${hy+1.2} M${fx+3} ${hy+3} L${fx+9.5} ${hy+3.8}" stroke="${OUT}" stroke-width=".6" stroke-linecap="round"/>`; break;
+    case 'hase':
+      behind = [-1,1].map(k => `<ellipse cx="${hx+k*3.2}" cy="${hy-13}" rx="2.8" ry="7" transform="rotate(${k*12} ${hx+k*3.2} ${hy-13})" fill="${f}" ${s}/><ellipse cx="${hx+k*3.2}" cy="${hy-13}" rx="1.3" ry="5" transform="rotate(${k*12} ${hx+k*3.2} ${hy-13})" fill="#FFB4C8"/>`).join('');
+      mark = cheeks('#FFB4C8') + nose('#FF8FB8');
+      if (face) top = `<rect x="${fx-1.1}" y="${hy+4.1}" width="2.2" height="2" rx=".4" fill="#fff" stroke="${OUT}" stroke-width=".5"/>`; break;
+    case 'frosch':
+      behind = ex.map(x => `<circle cx="${x}" cy="${ey}" r="3.4" fill="${f}" ${s}/>`).join('');
+      mark = cheeks('#FF8FB8'); break;
+    case 'einhorn':
+      behind = [['#C89BFF',-3,-8.6],['#FF8FB8',-6.6,-6],['#FFD23F',-8.8,-2],['#6EEBB0',-9,2.4],['#9EE7FF',-7.6,6]].map(([c,dx,dy]) => `<circle cx="${hx+dx}" cy="${hy+dy}" r="2.8" fill="${c}" stroke="${OUT}" stroke-width=".9"/>`).join('')
+        + `<path d="M${hx+3} ${hy-6.5} L${hx+5.8} ${hy-12} L${hx+7} ${hy-4.2}Z" fill="${f}" ${s}/>`;
+      mark = cheeks('#FFB4C8');
+      top = `<path d="M${hx+.2} ${hy-6.8} L${hx+2.6} ${hy-17} L${hx+4.2} ${hy-6.2}Z" fill="#F5B82E" ${s}/><path d="M${hx+.9} ${hy-9.4} L${hx+3.9} ${hy-10.2} M${hx+1.6} ${hy-12.4} L${hx+3.4} ${hy-13}" stroke="${OUT}" stroke-width=".6"/>`; break;
+    case 'tiger':
+      behind = roundEars(f, '#fff');
+      fur = `<path d="M${hx-2.2} ${hy-7.8} L${hx-1.5} ${hy-4.6} M${hx+2.2} ${hy-7.8} L${hx+1.5} ${hy-4.6} M${hx} ${hy-7.8} L${hx} ${hy-5.4} M${hx-7.8} ${hy-1} L${hx-5} ${hy-.2} M${hx-7.8} ${hy+2.2} L${hx-5.2} ${hy+2.2} M${hx+7.8} ${hy-1} L${hx+5} ${hy-.2} M${hx+7.8} ${hy+2.2} L${hx+5.2} ${hy+2.2}" stroke="${OUT}" stroke-width="1.3" stroke-linecap="round"/>`;
+      mark = `<ellipse cx="${fx}" cy="${hy+3.4}" rx="4.4" ry="3" fill="#fff"/>` + nose('#FF8FB8'); break;
+    case 'pinguin':
+      mark = `<ellipse cx="${fx}" cy="${hy+3.4}" rx="6.4" ry="5.4" fill="#fff"/>` + ex.map(x => `<circle cx="${x}" cy="${ey}" r="3.2" fill="#fff"/>`).join('');
+      if (face) top = view === 'side'
+        ? `<path d="M${fx+1} ${hy+1.2} L${fx+6.8} ${hy+2.6} L${fx+1} ${hy+4}Z" fill="#FFA42E" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/>`
+        : `<path d="M${fx-2.3} ${hy+1.6} L${fx+2.3} ${hy+1.6} L${fx} ${hy+4.6}Z" fill="#FFA42E" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/>`; break;
+    case 'roboter':
+      behind = `<path d="M${hx} ${hy-7} L${hx} ${hy-12}" stroke="${OUT}" stroke-width="1.4"/><circle cx="${hx}" cy="${hy-12.8}" r="1.9" fill="#FF4D5E" ${s}/><rect x="${hx-9.4}" y="${hy-1.6}" width="2.4" height="3.4" rx=".6" fill="#8C96A8" ${s}/><rect x="${hx+7}" y="${hy-1.6}" width="2.4" height="3.4" rx=".6" fill="#8C96A8" ${s}/>`;
+      mark = `<rect x="${fx-2.8}" y="${hy+2.8}" width="5.6" height="2.2" rx=".6" fill="#23283A"/><path d="M${fx-1} ${hy+2.8} L${fx-1} ${hy+5} M${fx+1} ${hy+2.8} L${fx+1} ${hy+5}" stroke="#6EF3FF" stroke-width=".5"/>`; break;
+  }
+  return {behind, clipped: fur + (face ? mark : ''), top};
+}
+function figureSVG({id='', uid='', avatar, color, wins=0, pose='run', idle=false, lead=false, sleep=false, web=false}){
+  const P = POSES[pose], [hx, hy] = P.head, ch = avatarOf(id, avatar);
+  const cap = 'stroke-linecap="round" stroke-linejoin="round" fill="none"';
+  const furC = ch.limbs || ch.fur, back = shade(furC, .22), dark = shade(color, .5);
+  const stroke = (d, w, c) => `<path d="${d}" stroke="${OUT}" stroke-width="${w + 2.6}" ${cap}/><path d="${d}" stroke="${c}" stroke-width="${w}" ${cap}/>`;
+  const limb = (L, isLeg) => {
+    const c = L.back ? back : furC, end = L.pts[L.pts.length - 1], [ox, oy] = L.pts[0];
+    const tip = isLeg
+      ? (L.noShoe ? '' : `<ellipse cx="${end[0] + 2}" cy="${end[1] + .6}" rx="3.9" ry="2.3" fill="#fff" stroke="${OUT}" stroke-width="1.2"/><path d="M${end[0] - .5} ${end[1] + 1.8} L${end[0] + 5} ${end[1] + 1.8}" stroke="${dark}" stroke-width="1.1"/>`)
+      : `<circle cx="${end[0]}" cy="${end[1]}" r="2.4" fill="${c}" stroke="${OUT}" stroke-width="1.2"/>`;
+    return `<g class="limb ${L.cls || ''}" style="transform-origin:${ox}px ${oy}px">${stroke(pathOf(L.pts), isLeg ? 5 : 4.2, c)}${tip}</g>`;
+  };
+  const [sx, sy] = P.S, [px, py] = P.H;
+  const mx = sx + (px - sx) * .62, my = sy + (py - sy) * .62;
+  const torso = stroke(`M${sx} ${sy} L${px} ${py}`, 8.5, color) + `<path d="M${mx} ${my} L${px} ${py}" stroke="#1B2440" stroke-width="8.8" ${cap}/>`
+    + (pose === 'climb' ? `<rect x="${px + 3}" y="${py - 5}" width="5" height="6" rx="1.5" fill="#fff" stroke="${OUT}" stroke-width="1"/>` : '');
+  const backs = P.arms.filter(a => a.back).map(a => limb(a)).join('') + P.legs.filter(l => l.back).map(l => limb(l, true)).join('');
+  const frontLegs = P.legs.filter(l => !l.back).map(l => limb(l, true)).join('');
+  const frontArms = P.arms.filter(a => !a.back).map(a => limb(a)).join('');
+
+  // head, character, face
+  const view = P.face;
+  const ex = view === 'side' ? (ch.id === 'frosch' ? [hx + .6, hx + 5.4] : [hx + 1.2, hx + 4.8]) : (ch.id === 'frosch' ? [hx - 3.7, hx + 3.7] : [hx - 2.7, hx + 2.7]);
+  const ey = hy - .3 + (ch.eyeDy || 0), po = view === 'side' ? .7 : 0;
+  const parts = charParts(ch, hx, hy, view, ex, ey);
+  let face = '';
+  if (view !== 'back') {
+    const mouthX = view === 'side' ? hx + 3.2 : hx;
+    if (sleep) face = ex.map(x => `<path d="M${x-1.7} ${ey} Q${x} ${ey+1.5} ${x+1.7} ${ey}" stroke="${OUT}" stroke-width="1.1" ${cap}/>`).join('');
+    else if (lead) face = `<path d="M${hx-7.4} ${ey-1} L${ex[0]-2.6} ${ey-1}" stroke="${OUT}" stroke-width="1.2"/><rect x="${ex[0]-2.8}" y="${ey-2.6}" width="${ex[1]-ex[0]+5.6}" height="4.4" rx="2" fill="${OUT}"/><path d="M${ex[0]-1.4} ${ey-1.4} L${ex[0]+.6} ${ey-1.4}" stroke="#9EE7FF" stroke-width=".9" stroke-linecap="round"/>`;
+    else if (ch.led) face = ex.map(x => `<rect x="${x-1.6}" y="${ey-1.3}" width="3.2" height="2.6" rx=".8" fill="#6EF3FF" stroke="${OUT}" stroke-width=".7"/>`).join('');
+    else face = ex.map(x => `<ellipse cx="${x}" cy="${ey}" rx="1.9" ry="2.2" fill="#fff" stroke="${OUT}" stroke-width=".8"/><circle cx="${x+po}" cy="${ey+.2}" r="1" fill="${OUT}"/><circle cx="${x+po+.4}" cy="${ey-.4}" r=".35" fill="#fff"/>`).join('');
+    if (!ch.noMouth && ch.id !== 'roboter') face += sleep ? `<ellipse cx="${mouthX}" cy="${hy+3.9}" rx="1.1" ry="1.3" fill="${OUT}"/>`
+      : `<path d="M${mouthX-1.8} ${hy+3.3} Q${mouthX} ${hy+(lead ? 5.7 : 4.9)} ${mouthX+1.8} ${hy+3.3}" stroke="${OUT}" stroke-width="1.1" ${lead ? 'fill="#fff"' : cap}/>`;
+  }
+  const shape = ch.square ? `<rect x="${hx-7.4}" y="${hy-7.4}" width="14.8" height="14.8" rx="3.6"` : `<circle cx="${hx}" cy="${hy}" r="7.6"`;
+  const clipId = `hc-${uid || 'x'}-${pose}`;
+  const head = `${parts.behind}${shape} fill="${ch.fur}"/><clipPath id="${clipId}">${shape}/></clipPath><g clip-path="url(#${clipId})">${parts.clipped}</g>${shape} fill="none" stroke="${OUT}" stroke-width="1.3"/>${face}${parts.top}`;
+
+  // extras
+  let under = '', over = '';
+  if (P.shadow) under += `<ellipse cx="22" cy="50" rx="13" ry="2.2" fill="rgba(0,0,0,.28)"/>`;
+  if (pose === 'climb') under += `<rect x="7" y="-6" width="34" height="56" rx="3" fill="rgba(255,255,255,.12)"/>` +
+    [[15.5,2.5,'#FFD23F'],[34,8.5,'#6EEBB0'],[17.5,47.5,'#FF8FB8'],[33,46.5,'#9EE7FF'],[29,24,'#FF7A45'],[12,30,'#C9F26B']].map(([x,y,c]) => `<circle cx="${x}" cy="${y}" r="2.5" fill="${c}" stroke="${OUT}" stroke-width=".8"/>`).join('');
+  if (pose === 'yoga') under += `<rect x="6" y="48.6" width="36" height="2.6" rx="1.3" fill="#9B5DE5" stroke="${OUT}" stroke-width=".8"/>`;
+  if (pose === 'sofa') under += `<rect x="3" y="24" width="42" height="16" rx="5" fill="#8A5A44" stroke="${OUT}" stroke-width="1.2"/><rect x="1" y="34" width="46" height="10" rx="4" fill="#A56B50" stroke="${OUT}" stroke-width="1.2"/><rect x="-1" y="29" width="7" height="15" rx="3" fill="#7A4C38" stroke="${OUT}" stroke-width="1.2"/><rect x="42" y="29" width="7" height="15" rx="3" fill="#7A4C38" stroke="${OUT}" stroke-width="1.2"/><path d="M5 44 L5 48 M43 44 L43 48" stroke="#3E271D" stroke-width="2.5" stroke-linecap="round"/>`;
+  if (pose === 'sofa') over += `<rect x="29" y="27" width="8" height="10" rx="1.5" fill="#FFD23F" stroke="#E23E3E" stroke-width="1.4"/><circle cx="31" cy="26.5" r="1.3" fill="#F5B82E" stroke="${OUT}" stroke-width=".5"/>`;
+  if (pose === 'workout') over += `<path d="M6 1.5 L42 1.5" stroke="#DDE3EE" stroke-width="2.2" stroke-linecap="round"/><rect x="3" y="-4.5" width="5.5" height="12" rx="1.5" fill="#1A1F2B" stroke="#fff" stroke-width=".7"/><rect x="39.5" y="-4.5" width="5.5" height="12" rx="1.5" fill="#1A1F2B" stroke="#fff" stroke-width=".7"/>`;
+  const speed = pose === 'run' && !idle ? `<g class="speed" stroke="rgba(255,255,255,.75)" stroke-width="1.6" stroke-linecap="round"><path d="M-3 17 L5 17"/><path d="M-9 25 L2 25"/><path d="M-5 33 L3 33"/></g>` : '';
+
+  const crownY = hy - (ch.crown || 8);
+  const crown = wins >= 3 ? `<path d="M${hx-6.5} ${crownY+6} L${hx-5.5} ${crownY-.5} L${hx-2.7} ${crownY+3.5} L${hx} ${crownY-1.5} L${hx+2.7} ${crownY+3.5} L${hx+5.5} ${crownY-.5} L${hx+6.5} ${crownY+6} Z" fill="var(--gold)" stroke="${OUT}" stroke-width="1" stroke-linejoin="round"/><circle cx="${hx}" cy="${crownY+3.8}" r="1.1" fill="#E23E3E"/>` : '';
+  const band = wins >= 1 && wins < 3 ? `<rect x="${hx-7.7}" y="${hy-3.6}" width="15.4" height="3" rx="1.2" fill="var(--gold)" stroke="${OUT}" stroke-width=".8"/><path d="M${hx-7.4} ${hy-2.2} L${hx-12} ${hy} M${hx-7.4} ${hy-1.4} L${hx-11.4} ${hy+2}" stroke="var(--gold)" stroke-width="1.6" stroke-linecap="round"/>` : '';
+  const medal = wins >= 2 ? `<path d="M${sx-3} ${sy-1} L${sx} ${sy+4.5} L${sx+3} ${sy-1}" fill="none" stroke="#E23E3E" stroke-width="1.5"/><circle cx="${sx}" cy="${sy+6.2}" r="2.8" fill="var(--gold)" stroke="${OUT}" stroke-width=".8"/>` : '';
+  const flames = lead ? `<g class="flames"><path d="M10 47 Q2 44 -9 47.5 Q1 50 10 49 Z" fill="#FFB02E"/><path d="M10 43 Q0 39 -7 42 Q1 45.5 10 45 Z" fill="#FF6A3D"/><path d="M10 45.5 Q5 44 0 45.5 Q5 47 10 46.5 Z" fill="#FFF2B0"/></g>` : '';
+  const zz = sleep ? `<g class="zz"><text x="${hx+8}" y="${hy-7}" font-size="7">z</text><text x="${hx+12}" y="${hy-12}" font-size="8.5">z</text><text x="${hx+17}" y="${hy-17}" font-size="10">Z</text></g>` : '';
+  const cob = web ? `<g stroke="rgba(255,255,255,.8)" stroke-width=".6" fill="none"><path d="M-11 -17 L7 -17 M-11 -17 L-11 1 M-11 -17 L4 -6 M-11 -17 L-2 -1 M-11 -17 L6 -11"/><path d="M-6 -17 Q-7 -12 -11 -11 M-1 -17 Q-3 -9 -11 -6 M4 -17 Q1 -4 -11 -1"/><path d="M4 -6 L4 1"/></g><circle cx="4" cy="2" r="1.7" fill="#fff"/>` : '';
+  return `<svg viewBox="-12 -18 64 70" class="p-${pose}${idle ? ' idle' : ''}" aria-hidden="true">${speed}${flames}${cob}${under}<g class="bob">${backs}${torso}${frontLegs}${head}${band}${crown}${medal}${frontArms}${over}</g>${zz}</svg>`;
+}
+const flameIcon = `<svg viewBox="0 0 11 14" aria-hidden="true"><path d="M5.5 0 C6.5 3 10.5 5 10.5 9 A5 5 0 0 1 0.5 9 C0.5 6.5 2 5.5 3 4 C3.2 5.5 4 6 4.5 6 C4 4 4.5 2 5.5 0Z" fill="#FFB02E"/><path d="M5.5 7 C6 8.5 7.8 9.3 7.8 11 A2.3 2.3 0 0 1 3.2 11 C3.2 9.6 4.6 9 5.5 7Z" fill="#FFF2B0"/></svg>`;
+
+/* ---------- effects ---------- */
+function confetti(n = 150){
+  if (REDUCED) return;
+  const c = document.createElement('canvas'); c.className = 'confetti'; document.body.appendChild(c);
+  const dpr = devicePixelRatio || 1; c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+  const x = c.getContext('2d'); x.scale(dpr, dpr);
+  const cols = [...SPORTS.map(s => s.color), '#F5B82E', '#FFFFFF'];
+  const ps = Array.from({length:n}, () => ({x: innerWidth/2 + (Math.random()-.5)*innerWidth*.4, y: innerHeight*.35, vx:(Math.random()-.5)*14, vy:-Math.random()*14-4, r:Math.random()*6, vr:(Math.random()-.5)*.4, w:6+Math.random()*6, h:4+Math.random()*4, c:cols[Math.floor(Math.random()*cols.length)]}));
+  const t0 = performance.now();
+  (function frame(t){
+    const k = (t - t0) / 2600; x.clearRect(0, 0, innerWidth, innerHeight);
+    for (const p of ps) { p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      x.save(); x.globalAlpha = Math.max(0, 1 - k); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.w/2, -p.h/2, p.w, p.h); x.restore(); }
+    k < 1 ? requestAnimationFrame(frame) : c.remove();
+  })(t0);
+}
+function flash(text){
+  const f = document.createElement('div'); f.className = 'flash'; f.textContent = text;
+  $('#stadium').appendChild(f); setTimeout(() => f.remove(), 3300);
+}
+function checkOvertake(){
+  const rows = rankedRows(current()); const now = rows.map(r => r.id);
+  const prev = S.rankSnapshot; S.rankSnapshot = {order: now, tot: Object.fromEntries(rows.map(r => [r.id, r.total]))};
+  if (!prev) return;
+  for (let i = 0; i < now.length; i++) {
+    const a = now[i], old = prev.order.indexOf(a);
+    if (old <= i) continue;
+    const passed = prev.order.slice(0, old).find(b => now.indexOf(b) > i && (prev.tot[b]||0) > (prev.tot[a]||0) && S.players[b]);
+    if (passed && S.view === current()) { flash(`${pname(a)} überholt ${pname(passed)}!`); confetti(90); return; }
+  }
+}
+
+/* ---------- render ---------- */
+function render(){ renderWho(); renderMonth(); renderCeremony(); renderTrack(); renderEntry(); renderFeed(); renderHall(); updateFab(); }
+const MOBILE = matchMedia('(max-width: 760px)');
+let entryInView = true;
+function updateFab(){
+  const fab = $('#fab');
+  fab.textContent = S.players[S.me] ? (S.editAvatar ? 'Figur speichern' : '+ Training eintragen') : 'Mitmachen';
+  fab.hidden = entryInView || S.readOnly || !S.loaded.players;
+}
+$('#fab').onclick = () => $('#entryCard').scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth', block: 'start'});
+if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { entryInView = e.isIntersecting; updateFab(); }, {threshold: .2}).observe($('#entryCard'));
+else entryInView = false;
+function renderWho(){
+  const p = S.players[S.me];
+  $('#who').innerHTML = p ? `<span class="whofig">${figureSVG({id:S.me, uid:'w', avatar:p.avatar, color:p.color, pose:'cheer', idle:true})}</span><span>${esc(p.name)}</span><button class="linkbtn" id="editAv">Figur ändern</button><button class="linkbtn" id="logout">Abmelden</button>` : '';
+  const lo = $('#logout'); if (lo) lo.onclick = () => { S.me = null; S.editAvatar = null; lsSet('monatslauf.me', null); render(); };
+  const ea = $('#editAv'); if (ea) ea.onclick = () => { S.editAvatar = {avatar: avatarOf(S.me, p.avatar).id, color: p.color}; renderEntry(); $('#entryCard').scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth', block: 'center'}); };
+}
+function renderMonth(){
+  $('#monthTitle').textContent = monthName(S.view);
+  const earliest = S.entries.reduce((a,e) => mkey(e.date) < a ? mkey(e.date) : a, current());
+  $('#prevM').disabled = S.view <= earliest;
+  $('#nextM').disabled = S.view >= current();
+  if (S.view === current()) {
+    const last = lastDayOf(S.view); const now = new Date(); now.setHours(0,0,0,0);
+    const left = Math.round((last - now) / 864e5);
+    const txt = left === 0 ? 'Letzter Tag! Heute um 23:59 steht der Sieg fest' : `Noch ${left} ${left===1?'Tag':'Tage'} · Deadline ${last.getDate()}. ${MONTHS[last.getMonth()]}, 23:59`;
+    $('#deadline').innerHTML = `<span class="pill${left<=3?' hot':''}">${txt}</span>`;
+  } else {
+    const w = winners().find(x => x.month === S.view);
+    $('#deadline').innerHTML = `<span class="pill done">Beendet${w ? ' · Sieg: ' + w.ids.map(id => esc(pname(id))).join(' & ') : ''}</span>`;
+  }
+}
+function podiumHTML(month){
+  const t = totals(month); const wc = winCounts();
+  const ranked = Object.entries(t).filter(([,r]) => r.total > 0).sort((a,b) => b[1].total - a[1].total).map(([id,r], i) => ({id, place:i+1, ...r}));
+  if (!ranked.length) return '';
+  const col = r => r ? `<div class="pcol pl${r.place}">
+      <div class="pfig">${figureSVG({id:r.id, uid:`p${month}${r.id}`, avatar:S.players[r.id]?.avatar, color:S.players[r.id]?.color || '#fff', wins:wc[r.id]||0, pose: r.place === 1 ? 'cheer' : 'run', idle: r.place !== 1})}</div>
+      <div class="pname">${esc(pname(r.id))}</div>
+      <div class="pblock"><b>${r.place}</b><span>${fmtMin(r.total)}</span></div></div>` : '';
+  const rest = ranked.slice(3);
+  return `<div class="podium">${col(ranked[1])}${col(ranked[0])}${col(ranked[2])}</div>
+    ${rest.length ? `<ul class="prest">${rest.map(r => `<li>${r.place}. ${esc(pname(r.id))} · ${fmtMin(r.total)}</li>`).join('')}</ul>` : ''}`;
+}
+function cheerOnce(key){ if (!S.cheered.has(key)) { S.cheered.add(key); setTimeout(() => confetti(120), 1600); } }
+function renderCeremony(){
+  const el = $('#ceremony'); const prev = shiftMonth(current(), -1);
+  const show = S.loaded.entries && S.view === current() && new Date().getDate() <= 3 && Object.keys(totals(prev)).length;
+  el.hidden = !show;
+  if (!show) { el.innerHTML = ''; return; }
+  if (el.dataset.month !== prev) { el.dataset.month = prev; el.innerHTML = `<h3>Siegerehrung ${monthName(prev)}</h3>${podiumHTML(prev)}`; cheerOnce(prev); }
+}
+
+const laneEls = new Map();
+function renderTrack(){
+  const past = S.view !== current();
+  $('#lanes').hidden = past; $('#scale').hidden = past; $('#podium').hidden = !past; $('#legendRow').hidden = past;
+  if (past) {
+    const pod = $('#podium');
+    if (pod.dataset.month !== S.view) { pod.dataset.month = S.view; pod.innerHTML = podiumHTML(S.view) || '<p class="stadium-note">In diesem Monat wurde nichts eingetragen.</p>'; if (pod.innerHTML.includes('podium')) cheerOnce(S.view); }
+    $('#stadiumNote').textContent = '';
+    return;
+  }
+  $('#podium').dataset.month = '';
+  let rows = rankedRows(current()); let example = false;
+  if (!rows.length && S.loaded.players) { rows = EXAMPLES; example = true; }
+  const max = rows[0]?.total || 0;
+  const box = $('#lanes');
+  const before = new Map([...laneEls].map(([id, el]) => [id, el.isConnected ? el.getBoundingClientRect().top : null]));
+  const keep = new Set(rows.map(r => r.id));
+  for (const [id, el] of laneEls) if (!keep.has(id)) { el.remove(); laneEls.delete(id); }
+  rows.forEach((r, i) => {
+    let el = laneEls.get(r.id), fresh = false;
+    if (!el) {
+      fresh = true; el = document.createElement('div'); el.className = 'lane';
+      el.innerHTML = `<div class="label"></div><div class="run" style="--p:0"><div class="trail"></div><div class="runner-wrap"><div class="fig"></div><span class="bubble"></span></div></div>`;
+      laneEls.set(r.id, el);
+    }
+    const lead = i === 0 && r.total > 0 && (rows.length === 1 || r.total > rows[1].total);
+    const lastPlace = rows.length >= 2 && i === rows.length - 1 && r.total < max;
+    const pose = lastPlace ? 'sofa' : (SPORT[r.lastSport]?.pose || 'run');
+    const sleep = r.idle >= 3, web = r.idle >= 7;
+    const p = max ? (r.total / max) * LEAD_POS : 0;
+    el.className = `lane${r.id === S.me ? ' me-lane' : ''}${example ? ' example' : ''}`;
+    const label = `<div class="nm"><b>${i+1}</b><span>${esc(r.name)}</span>${lead ? '<em class="leadtag">führt</em>' : ''}</div>
+      <div class="meta"><span>${fmtMin(r.total)} · ${r.count} ${r.count===1?'Einheit':'Einheiten'}</span>${r.streak >= 2 ? `<span class="streak" title="${r.streak} Tage in Folge">${flameIcon}${r.streak}</span>` : ''}${r.wins ? `<span>${r.wins}× Monatssieg</span>` : ''}</div>`;
+    const lbl = el.querySelector('.label'); if (lbl._h !== label) { lbl.innerHTML = label; lbl._h = label; }
+    const fig = figureSVG({id: r.id, uid: 'l' + r.id, avatar: r.avatar, color: r.color || '#fff', wins: r.wins, pose, idle: r.total === 0 || sleep, lead, sleep, web});
+    const fe = el.querySelector('.fig'); if (fe._h !== fig) { fe.innerHTML = fig; fe._h = fig; }
+    const bub = r.total === 0 ? 'noch am Start' : i === 0 || r.total === max ? fmtMin(r.total) : `–${fmtMin(max - r.total)}`;
+    const be = el.querySelector('.bubble'); be.textContent = bub; be.title = `Gesamt: ${fmtMin(r.total)}`;
+    el.querySelector('.runner-wrap').classList.toggle('far', p > .55);
+    let acc = 0; const stops = r.segs.map(s => { const a = acc / (r.total||1) * 100; acc += s.min; return `${SPORT[s.sport]?.color || '#fff'} ${a}% ${acc / (r.total||1) * 100}%`; });
+    el.querySelector('.trail').style.background = stops.length ? `linear-gradient(90deg,${stops.join(',')})` : 'transparent';
+    const run = el.querySelector('.run');
+    if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => run.style.setProperty('--p', p)));
+    else run.style.setProperty('--p', p);
+    box.appendChild(el);
+  });
+  if (!REDUCED) for (const [id, el] of laneEls) {
+    const old = before.get(id); if (old == null) continue;
+    const d = old - el.getBoundingClientRect().top; if (!d) continue;
+    el.style.transition = 'none'; el.style.transform = `translateY(${d}px)`; el.style.zIndex = d > 0 ? 2 : 1;
+    requestAnimationFrame(() => { el.style.transition = 'transform 700ms cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; setTimeout(() => el.style.zIndex = '', 750); });
+  }
+  const used = SPORTS.filter(s => rows.some(r => r.segs.some(g => g.sport === s.id)));
+  $('#legendRow').innerHTML = rows.length ? `<span>Spuren:</span>${used.map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('')}` : '';
+  $('#stadiumNote').textContent = !S.loaded.players ? 'Lade Rennbahn …'
+    : example ? 'So sieht es aus, sobald ihr loslegt. Meldet euch an und tragt euer erstes Training ein.'
+    : 'Wer führt, läuft vorne mit Flammen an den Schuhen, alle anderen im Verhältnis dazu. Das Schlusslicht sitzt auf dem Sofa. Nach 3 Tagen Pause schläft das Männchen ein, nach einer Woche setzt es Spinnweben an.';
+}
+
+function renderEntry(){
+  const card = $('#entryCard');
+  if (!S.players[S.me]) return renderLogin(card);
+  if (S.editAvatar) return renderAvatarEditor(card);
+  if (S.readOnly) { card.innerHTML = `<h3>Training eintragen</h3><p class="summary">Du kannst dir die Rennbahn ansehen, aber keine Einträge speichern. Bitte die Person, die den Monatslauf geteilt hat, dich als Mitwirkende·n einzuladen.</p>`; return; }
+  const f = S.form;
+  const minDate = `${current()}-01`;
+  const dateChips = [['Heute',today()],['Gestern',daysAgo(1)],['Vorgestern',daysAgo(2)]].filter(([,d]) => d >= minDate);
+  if (f.date < minDate) f.date = today();
+  const quickDate = dateChips.some(([,d]) => d === f.date);
+  card.innerHTML = `
+    <h3>Training eintragen</h3>
+    <div class="field"><span class="lbl">Tag</span>
+      <div class="chips">
+        ${dateChips.map(([l,d]) => `<button class="chip" data-date="${d}" aria-pressed="${f.date===d}">${l}</button>`).join('')}
+        <input type="date" id="dateIn" aria-label="Anderes Datum" min="${minDate}" max="${today()}" value="${f.date}" ${quickDate?'':'style="border-color:var(--ink)"'}>
+      </div>
+    </div>
+    <div class="field"><span class="lbl">Dauer</span>
+      <div class="chips">
+        ${DURATIONS.map(m => `<button class="chip big" data-min="${m}" aria-pressed="${!f.custom && f.minutes===m}">${m}<small>min</small></button>`).join('')}
+        <input type="number" id="minIn" min="1" max="600" placeholder="andere" aria-label="Andere Dauer in Minuten" value="${f.custom ? f.minutes : ''}">
+      </div>
+    </div>
+    <div class="field"><span class="lbl">Sportart</span>
+      <div class="chips">
+        ${SPORTS.map(s => `<button class="chip" data-sport="${s.id}" aria-pressed="${f.sport===s.id}"><span class="sw" style="background:${s.color}"></span>${s.label}</button>`).join('')}
+      </div>
+    </div>
+    <p class="summary" id="sum">${f.sport ? `${fmtDate(f.date)} · ${fmtMin(f.minutes)} ${SPORT[f.sport].label}` : 'Wähle noch eine Sportart.'}</p>
+    <button class="primary" id="saveEntry" ${f.sport && f.minutes > 0 && !S.busy ? '' : 'disabled'}>Eintragen</button>`;
+  card.querySelectorAll('[data-date]').forEach(b => b.onclick = () => { f.date = b.dataset.date; renderEntry(); });
+  card.querySelectorAll('[data-min]').forEach(b => b.onclick = () => { f.minutes = +b.dataset.min; f.custom = false; renderEntry(); });
+  card.querySelectorAll('[data-sport]').forEach(b => b.onclick = () => { f.sport = b.dataset.sport; renderEntry(); });
+  $('#dateIn').onchange = e => { if (e.target.value && e.target.value >= minDate && e.target.value <= today()) f.date = e.target.value; renderEntry(); };
+  $('#minIn').oninput = e => {
+    const v = parseInt(e.target.value, 10);
+    if (v > 0 && v <= 600) { f.minutes = v; f.custom = true; }
+    card.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(!f.custom && f.minutes === +b.dataset.min)));
+    $('#sum').textContent = f.sport ? `${fmtDate(f.date)} · ${fmtMin(f.minutes)} ${SPORT[f.sport].label}` : 'Wähle noch eine Sportart.';
+    $('#saveEntry').disabled = !(f.sport && f.minutes > 0);
+  };
+  $('#saveEntry').onclick = saveEntry;
+}
+async function saveEntry(){
+  const f = S.form; if (!f.sport || S.busy) return;
+  S.busy = true; renderEntry();
+  try {
+    S.view = current();
+    await S.store.add('entries', {player: S.me, date: f.date, minutes: f.minutes, sport: f.sport, created: Date.now()});
+    toast(`${fmtMin(f.minutes)} ${SPORT[f.sport].label} eingetragen`);
+    if (MOBILE.matches) $('#stadium').scrollIntoView({behavior: REDUCED ? 'auto' : 'smooth', block: 'start'});
+    confetti();
+  } catch (e) { handleWriteError(e); }
+  S.busy = false; render();
+}
+function handleWriteError(e){
+  if (e?.code === 'invalid_argument' && S.store.shared) { S.readOnly = true; toast('Du hast hier nur Leserechte.'); }
+  else if (e?.code === 'quota_exceeded') toast('Der Speicher ist voll. Löscht ein paar alte Einträge.');
+  else toast('Speichern hat nicht geklappt. Versuch es gleich noch mal.');
+}
+
+function pickerHTML(avatar, color){
+  return `<div class="field"><span class="lbl">Wähle deine Figur</span>
+      <div class="avatars">${CHARACTERS.map(c => `<button data-avatar="${c.id}" aria-pressed="${avatar === c.id}" aria-label="${c.label}">${figureSVG({uid:'a' + c.id, avatar:c.id, color, pose:'cheer', idle: avatar !== c.id})}<span>${c.label}</span></button>`).join('')}</div>
+    </div>
+    <div class="field"><span class="lbl">Trikotfarbe</span>
+      <div class="colors">${PCOLORS.map(c => `<button data-color="${c}" style="background:${c}" aria-label="Trikotfarbe ${c}" aria-pressed="${color === c}"></button>`).join('')}</div>
+    </div>`;
+}
+function bindPicker(card, obj, rerender){
+  card.querySelectorAll('[data-avatar]').forEach(b => b.onclick = () => { obj.avatar = b.dataset.avatar; rerender(); card.querySelector(`[data-avatar="${obj.avatar}"]`)?.focus(); });
+  card.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { obj.color = b.dataset.color; rerender(); card.querySelector(`[data-color="${obj.color}"]`)?.focus(); });
+}
+function renderAvatarEditor(card){
+  const E = S.editAvatar;
+  card.innerHTML = `<h3>Deine Figur</h3>${pickerHTML(E.avatar, E.color)}
+    <div class="row-btns"><button class="primary" id="saveAv">Speichern</button><button class="secondary" id="cancelAv">Abbrechen</button></div>`;
+  bindPicker(card, E, () => renderAvatarEditor(card));
+  $('#saveAv').onclick = saveAvatar;
+  $('#cancelAv').onclick = () => { S.editAvatar = null; renderEntry(); };
+}
+async function saveAvatar(){
+  const E = S.editAvatar; const {id, ...p} = S.players[S.me];
+  try { await S.store.set('players', S.me, {...p, avatar: E.avatar, color: E.color}); S.editAvatar = null; toast(`Du läufst jetzt als ${CHAR[E.avatar].label}`); }
+  catch (e) { handleWriteError(e); }
+  render();
+}
+function renderLogin(card){
+  const L = S.login; const existing = Object.entries(S.players).sort((a,b) => a[1].name.localeCompare(b[1].name));
+  const key = slug(L.name); const taken = key && S.players[key];
+  card.innerHTML = `
+    <h3>Mitmachen</h3>
+    ${existing.length ? `<div class="field"><span class="lbl">Schon dabei? Tippe auf deinen Namen</span>
+      <div class="players-quick">${existing.map(([id,p]) => `<button class="chip" data-login="${esc(id)}"><span class="sw" style="background:${esc(p.color)};box-shadow:0 0 0 1px var(--line)"></span>${esc(p.name)}</button>`).join('')}</div></div>` : ''}
+    <div class="field"><label for="nameIn">${existing.length ? 'Oder neu anmelden' : 'Dein Benutzername'}</label>
+      <input type="text" id="nameIn" maxlength="24" autocomplete="off" placeholder="z. B. Hauke" value="${esc(L.name)}">
+    </div>
+    ${taken ? `<p class="summary">„${esc(S.players[key].name)}“ gibt es schon. Mit „Los geht’s“ meldest du dich als diese Person an.</p>` : pickerHTML(L.avatar, L.color)}
+    <button class="primary" id="loginBtn" ${key ? '' : 'disabled'}>Los geht’s</button>
+    <p class="summary">Kein Passwort nötig. Der Name wird in diesem Browser gemerkt. Figur und Farbe kannst du später jederzeit ändern.</p>`;
+  card.querySelectorAll('[data-login]').forEach(b => b.onclick = () => loginAs(b.dataset.login));
+  bindPicker(card, L, () => renderLogin(card));
+  const ni = $('#nameIn');
+  ni.oninput = e => { L.name = e.target.value; const pos = e.target.selectionStart; renderLogin(card); const n = $('#nameIn'); n.focus(); n.setSelectionRange(pos,pos); };
+  ni.onkeydown = e => { if (e.key === 'Enter') register(); };
+  $('#loginBtn').onclick = register;
+}
+function loginAs(id){ S.me = id; lsSet('monatslauf.me', id); S.login.name = ''; render(); toast(`Hallo ${pname(id)}!`); }
+async function register(){
+  const name = S.login.name.trim().slice(0,24); const key = slug(name);
+  if (!key) return;
+  if (S.players[key]) return loginAs(key);
+  const doc = {name, color: S.login.color, avatar: S.login.avatar, created: Date.now()};
+  try { await S.store.set('players', key, doc); S.players[key] ||= {id: key, ...doc}; loginAs(key); }
+  catch (e) { handleWriteError(e); }
+}
+
+function renderFeed(){
+  const list = S.entries.filter(e => mkey(e.date) === S.view)
+    .sort((a,b) => b.date.localeCompare(a.date) || (b.created||0) - (a.created||0)).slice(0, 12);
+  $('#feed').innerHTML = list.length ? list.map(e => {
+    const s = SPORT[e.sport] || SPORT.anderes;
+    return `<li><span class="sw" style="background:${s.color}"></span>
+      <span><b>${esc(pname(e.player))}</b> · ${s.label} <span class="muted">· ${fmtDate(e.date)}</span></span>
+      <span class="min">${e.minutes}′</span>
+      ${e.player === S.me && S.view === current() ? `<button class="del" data-del="${esc(e.id)}" aria-label="Eintrag löschen" title="Löschen">×</button>` : '<span></span>'}</li>`;
+  }).join('') : `<li style="grid-template-columns:1fr"><span class="muted">${S.loaded.entries ? 'Noch keine Einträge in diesem Monat.' : 'Lade …'}</span></li>`;
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    if (b.dataset.armed) { try { await S.store.del('entries', b.dataset.del); toast('Eintrag gelöscht'); } catch (e) { handleWriteError(e); } }
+    else { b.dataset.armed = '1'; b.textContent = 'Löschen?'; b.style.fontSize = '13px'; b.style.color = 'var(--danger)'; }
+  });
+}
+function renderHall(){
+  const w = winners(); const last = lastDayOf(current());
+  $('#hall').innerHTML = w.length ? w.map(x => `<li><span class="m">${monthName(x.month)}</span><span><b>${x.ids.map(id => esc(pname(id))).join(' & ')}</b> <span class="muted">${fmtMin(x.max)}</span></span></li>`).join('')
+    : `<li><span class="muted">Der erste Monatssieg wird am ${last.getDate()}. ${MONTHS[last.getMonth()]} um 23:59 vergeben.</span></li>`;
+}
+
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+
+$('#prevM').onclick = () => { S.view = shiftMonth(S.view, -1); render(); };
+$('#nextM').onclick = () => { if (S.view < current()) { S.view = shiftMonth(S.view, 1); render(); } };
+
+/* ---------- boot ---------- */
+function start(store){
+  S.store = store;
+  if (!store.shared) { const b = $('#banner'); b.hidden = false; b.textContent = 'Offline-Modus: Einträge werden nur in diesem Browser gespeichert.'; }
+  const onErr = () => { S.readOnly = true; render(); };
+  store.subscribe('players', docs => { S.players = Object.fromEntries(docs.map(d => [d.id, d])); S.loaded.players = true; render(); }, onErr);
+  store.subscribe('entries', docs => {
+    S.entries = docs.filter(d => d.date && d.minutes > 0 && d.player);
+    const first = !S.loaded.entries; S.loaded.entries = true;
+    render();
+    if (first) { S.rankSnapshot = null; } checkOvertake();
+  }, onErr);
+}
+render();
+(async () => {
+  let db = null;
+  try { db = window.claude?.use ? await window.claude.use('db') : null; } catch {}
+  start(db ? remoteStore(db) : localStore());
+})();
+</script>
