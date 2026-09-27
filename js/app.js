@@ -123,12 +123,14 @@ function flash(text) {
 }
 function checkOvertake() {
   const rows = rankedRows(current()); const now = rows.map(r => r.id);
-  const prev = S.rankSnapshot; S.rankSnapshot = { order: now, tot: Object.fromEntries(rows.map(r => [r.id, r.total])) };
+  const tot = Object.fromEntries(rows.map(r => [r.id, r.total]));
+  const prev = S.rankSnapshot; S.rankSnapshot = { order: now, tot };
   if (!prev) return;
   for (let i = 0; i < now.length; i++) {
     const a = now[i], old = prev.order.indexOf(a);
-    if (old <= i) continue;
-    const passed = prev.order.slice(0, old).find(b => now.indexOf(b) > i && (prev.tot[b] || 0) > (prev.tot[a] || 0) && S.players[b]);
+    // Überholen kann nur, wer selbst Punkte dazubekommen hat (nicht, wenn jemand vor ihm einen Eintrag löscht)
+    if (old <= i || tot[a] <= (prev.tot[a] || 0)) continue;
+    const passed = prev.order.slice(0, old).find(b => now.indexOf(b) > i && (prev.tot[b] || 0) > (prev.tot[a] || 0) && (tot[b] || 0) < tot[a] && S.players[b]);
     if (passed && S.view === current()) { flash(`${pname(a)} überholt ${pname(passed)}!`); confetti(90); return; }
   }
 }

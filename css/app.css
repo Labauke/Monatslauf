@@ -128,7 +128,8 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;padding-top:12px}
 .pcol{display:flex;flex-direction:column;align-items:center;gap:4px;width:min(30%,150px)}
 .pname{font-weight:700;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pfig{animation:drop .6s cubic-bezier(.3,1.4,.5,1) backwards}
+.pfig{width:min(100%,84px);animation:drop .6s cubic-bezier(.3,1.4,.5,1) backwards}
+.pfig svg{width:100%;height:auto;aspect-ratio:64/70;display:block;overflow:visible}
 .pblock{width:100%;background:rgba(255,255,255,.16);border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:6px;transform-origin:bottom;animation:rise .7s cubic-bezier(.2,.8,.2,1) backwards}
 .pblock b{font-family:var(--display);font-size:40px;font-weight:800;line-height:1}
 .pblock span{font-family:var(--display);font-size:17px;font-weight:600;opacity:.9}
