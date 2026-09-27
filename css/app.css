@@ -71,7 +71,7 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .runner-wrap{position:absolute;bottom:2px;left:calc((100% - var(--fw)) * var(--p));width:var(--fw);transition:left 900ms cubic-bezier(.2,.8,.2,1)}
 .fig svg{width:var(--fw);height:calc(var(--fw) * 1.094);display:block;overflow:visible}
 .bubble{position:absolute;bottom:22px;left:calc(var(--fw) + 2px);white-space:nowrap;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.02em;background:rgba(0,0,0,.3);padding:0 8px;border-radius:6px}
-.runner-wrap.far .bubble{left:auto;right:calc(var(--fw) + 2px)}
+.runner-wrap.far .bubble{left:auto;right:calc(var(--fw) + 5px)}
 .leadtag{background:var(--gold);color:#1a1405;border-radius:4px;padding:0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex:none}
 .me-lane{background:rgba(255,255,255,.07)}
 .example{opacity:.6}
@@ -85,44 +85,90 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .flash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;background:var(--gold);color:#1a1405;font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,48px);text-transform:uppercase;letter-spacing:.02em;padding:8px 24px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;animation:flash 3.2s ease forwards;pointer-events:none}
 @keyframes flash{0%{transform:translate(-50%,-50%) scale(.3) rotate(-6deg);opacity:0}12%{transform:translate(-50%,-50%) scale(1.08) rotate(-2deg);opacity:1}20%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1) rotate(-2deg)}}
 
-/* figure animations */
-.fig .limb{transform-box:view-box}
-.p-run .l1,.p-run .a2{animation:swing .55s ease-in-out infinite alternate}
-.p-run .l2,.p-run .a1{animation:swing .55s ease-in-out infinite alternate-reverse}
-.p-run .bob{animation:bob .275s ease-in-out infinite alternate}
-.p-climb .bob{animation:climb 1.1s ease-in-out infinite alternate}
-.p-climb .c1{transform-origin:24px 19px;animation:reach 1.1s ease-in-out infinite alternate}
-.p-workout .bob{animation:press .7s ease-in-out infinite alternate}
-.p-yoga .bob{transform-origin:24px 48px;transform-box:view-box;animation:breathe 2.4s ease-in-out infinite alternate}
-.p-sofa .munch{transform-origin:22px 26px;transform-box:view-box;animation:munch 1.4s ease-in-out infinite}
-.p-cheer .bob{animation:jump .5s ease-in-out infinite alternate}
-.p-bike .k1{animation:pedal .5s ease-in-out infinite alternate}
-.p-bike .k2{animation:pedal .5s ease-in-out infinite alternate-reverse}
-.p-bike .bob{animation:bob .25s ease-in-out infinite alternate}
-.spin{transform-box:view-box;animation:spin .6s linear infinite}
-.cape{transform-box:view-box;animation:cape .5s ease-in-out infinite alternate}
-.idle .limb,.idle .bob,.idle .munch,.idle .spin,.idle .cape{animation:none!important}
-.speed path{animation:speed .45s linear infinite}
-.speed path:nth-child(2){animation-delay:-.15s}.speed path:nth-child(3){animation-delay:-.3s}
-.tail{transform-box:view-box;animation:swing .55s ease-in-out infinite alternate;animation-duration:.55s}
-.idle .tail{animation:none}
-@keyframes speed{from{transform:translateX(6px);opacity:0}40%{opacity:.8}to{transform:translateX(-8px);opacity:0}}
-.flames{transform-origin:10px 44px;transform-box:view-box;animation:flicker .18s ease-in-out infinite alternate}
-.zz text{font-family:var(--display);font-weight:800;fill:#fff;opacity:0;animation:zz 2.4s ease-in-out infinite}
-.zz text:nth-child(2){animation-delay:.6s}.zz text:nth-child(3){animation-delay:1.2s}
-@keyframes pedal{from{transform:rotate(-14deg)}to{transform:rotate(10deg)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes cape{from{transform:skewY(-4deg)}to{transform:skewY(5deg)}}
-@keyframes swing{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
-@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-1.5px)}}
-@keyframes climb{from{transform:translateY(2px)}to{transform:translateY(-2px)}}
-@keyframes reach{from{transform:rotate(0)}to{transform:rotate(-12deg)}}
-@keyframes press{from{transform:translateY(0)}to{transform:translateY(3px)}}
-@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.05)}}
-@keyframes munch{0%,60%,100%{transform:rotate(0)}75%{transform:rotate(-35deg)}}
-@keyframes jump{from{transform:translateY(0)}to{transform:translateY(-4px)}}
-@keyframes flicker{from{transform:scaleX(.8)}to{transform:scaleX(1.15)}}
-@keyframes zz{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:0;transform:translateY(-5px)}}
+/* Figuren-Animationen (js/figure.js, Wurzelklasse .kn am <svg>). Gelenke drehen um ihren eigenen Punkt (style="transform-origin" in Figur-Koordinaten). */
+.kn{overflow:visible}
+.kn .j,.kn .bob,.kn .flames,.kn .snot,.kn .zz g,.kn .speed path,.kn .sparkle{transform-box:view-box}
+/* Laufen: Knöchelpfad mit 8 Stützpunkten (Aufsetzen, Stütz, Abdruck, Ferse hoch, Knie vor), daraus die Gelenkwinkel.
+   Beide Beine um eine halbe Periode versetzt; der Körper ist oben, während die Beine unter ihm durchgehen,
+   so bleibt der Schuh auf der Bodenlinie (y 66) statt in die Bahn zu sinken */
+.kn.p-run .bob{animation:kn-hop .3s ease-in-out infinite}
+.kn.p-run .lA-u{animation:kn-thighA .6s linear infinite}
+.kn.p-run .lA-l{animation:kn-shinA .6s linear infinite}
+.kn.p-run .lC-u{animation:kn-thighC .6s linear infinite}
+.kn.p-run .lC-l{animation:kn-shinC .6s linear infinite}
+.kn.p-run .af-u{animation:kn-armFu .6s ease-in-out infinite}
+.kn.p-run .af-l{animation:kn-armFl .6s ease-in-out infinite}
+.kn.p-run .ab-u{animation:kn-armBu .6s ease-in-out infinite}
+.kn.p-run .ab-l{animation:kn-armBl .6s ease-in-out infinite}
+@keyframes kn-hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.3px)}}
+@keyframes kn-thighA{0%,100%{transform:rotate(0)}12.5%{transform:rotate(-2deg)}25%{transform:rotate(6deg)}37.5%{transform:rotate(38deg)}50%{transform:rotate(104deg)}62.5%{transform:rotate(108deg)}75%{transform:rotate(77deg)}87.5%{transform:rotate(-17deg)}}
+@keyframes kn-shinA{0%,100%{transform:rotate(0)}12.5%{transform:rotate(21deg)}25%{transform:rotate(37deg)}37.5%{transform:rotate(34deg)}50%{transform:rotate(-13deg)}62.5%{transform:rotate(11deg)}75%{transform:rotate(59deg)}87.5%{transform:rotate(73deg)}}
+@keyframes kn-thighC{0%,100%{transform:rotate(0)}12.5%{transform:rotate(4deg)}25%{transform:rotate(-27deg)}37.5%{transform:rotate(-121deg)}50%{transform:rotate(-104deg)}62.5%{transform:rotate(-106deg)}75%{transform:rotate(-98deg)}87.5%{transform:rotate(-66deg)}}
+@keyframes kn-shinC{0%,100%{transform:rotate(0)}12.5%{transform:rotate(24deg)}25%{transform:rotate(72deg)}37.5%{transform:rotate(86deg)}50%{transform:rotate(13deg)}62.5%{transform:rotate(34deg)}75%{transform:rotate(50deg)}87.5%{transform:rotate(46deg)}}
+/* vorderer Arm schwingt nur bis zur Rückenkante, damit er nicht quer über dem Trikot liegt */
+@keyframes kn-armFu{0%,100%{transform:rotate(0)}50%{transform:rotate(42deg)}}
+@keyframes kn-armFl{0%,100%{transform:rotate(0)}50%{transform:rotate(30deg)}}
+@keyframes kn-armBu{0%,100%{transform:rotate(0)}50%{transform:rotate(-62deg)}}
+@keyframes kn-armBl{0%,100%{transform:rotate(0)}50%{transform:rotate(-28deg)}}
+/* Jubeln: kleine Sprünge, Arme winken */
+.kn.p-cheer .bob{animation:kn-jump .5s ease-in-out infinite alternate}
+.kn.p-cheer .aL-u{animation:kn-waveL .5s ease-in-out infinite alternate}
+.kn.p-cheer .aR-u{animation:kn-waveR .5s ease-in-out infinite alternate}
+@keyframes kn-jump{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+@keyframes kn-waveL{from{transform:rotate(-6deg)}to{transform:rotate(8deg)}}
+@keyframes kn-waveR{from{transform:rotate(6deg)}to{transform:rotate(-8deg)}}
+/* Fahrrad: pedalieren, Räder drehen */
+.kn.p-bike .bob{animation:kn-hop .25s ease-in-out infinite}
+.kn.p-bike .kf-u{animation:kn-pedalU .5s ease-in-out infinite alternate}
+.kn.p-bike .kf-l{animation:kn-pedalL .5s ease-in-out infinite alternate}
+.kn.p-bike .kb-u{animation:kn-pedalU .5s ease-in-out infinite alternate-reverse}
+.kn.p-bike .kb-l{animation:kn-pedalL .5s ease-in-out infinite alternate-reverse}
+.kn .spin{animation:kn-spin .6s linear infinite}
+@keyframes kn-pedalU{from{transform:rotate(-14deg)}to{transform:rotate(12deg)}}
+@keyframes kn-pedalL{from{transform:rotate(18deg)}to{transform:rotate(-16deg)}}
+@keyframes kn-spin{to{transform:rotate(360deg)}}
+/* Klettern: oberer Arm greift nach, Körper zieht sich hoch, freies Bein pendelt */
+.kn.p-climb .bob{animation:kn-climb 1.2s ease-in-out infinite alternate}
+.kn.p-climb .cN-u{animation:kn-reach 1.2s ease-in-out infinite alternate}
+.kn.p-climb .cN-l{animation:kn-reachL 1.2s ease-in-out infinite alternate}
+.kn.p-climb .cD-u{animation:kn-dangle 1.2s ease-in-out infinite alternate}
+@keyframes kn-climb{from{transform:translateY(.4px)}to{transform:translateY(-2px)}}
+@keyframes kn-reach{from{transform:rotate(0)}to{transform:rotate(-8deg)}}
+@keyframes kn-reachL{from{transform:rotate(0)}to{transform:rotate(10deg)}}
+@keyframes kn-dangle{from{transform:rotate(0)}to{transform:rotate(-14deg)}}
+/* Hantel: Kreuzheben, die Figur federt zu den Füßen hin */
+.kn.p-workout .bob{transform-origin:32px 65px;animation:kn-lift .9s ease-in-out infinite alternate}
+@keyframes kn-lift{from{transform:scale(1,1)}to{transform:scale(1.015,.96)}}
+/* Yoga: atmen und schweben */
+.kn.p-yoga .bob{transform-origin:32px 62px;animation:kn-breathe 2.4s ease-in-out infinite alternate}
+.kn .sparkle{animation:kn-twinkle 1.6s ease-in-out infinite alternate}
+@keyframes kn-breathe{from{transform:translateY(0) scale(1)}to{transform:translateY(-1.4px) scale(1.03)}}
+@keyframes kn-twinkle{from{opacity:.3}to{opacity:1}}
+/* Sofa: Chips zum Mund */
+.kn.p-sofa .munch-l{animation:kn-munch 1.4s ease-in-out infinite}
+.kn.p-sofa .munch-u{animation:kn-munchU 1.4s ease-in-out infinite}
+@keyframes kn-munch{0%,55%,100%{transform:rotate(0)}75%{transform:rotate(28deg)}}
+@keyframes kn-munchU{0%,55%,100%{transform:rotate(0)}75%{transform:rotate(-12deg)}}
+/* Schlafen: atmen, Rotzblase, Zs */
+.kn.p-sleep .bob{transform-origin:32px 64px;animation:kn-snore 2.4s ease-in-out infinite alternate}
+.kn .snot{animation:kn-snot 2.4s ease-in-out infinite alternate}
+.kn .zz g{animation:kn-zz 2.4s ease-in-out infinite}
+@keyframes kn-snore{from{transform:scale(1)}to{transform:scale(1.025,1.04)}}
+@keyframes kn-snot{from{transform:scale(.6)}to{transform:scale(1.1)}}
+@keyframes kn-zz{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:.2;transform:translateY(-3px)}}
+/* Schweif, Schal, Umhang, Flammen, Speedlines */
+.kn .tail{animation:kn-wag .6s ease-in-out infinite alternate}
+.kn .cape{animation:kn-cape .5s ease-in-out infinite alternate}
+.kn .flames{animation:kn-flicker .18s ease-in-out infinite alternate}
+.kn .speed path{animation:kn-speed .45s linear infinite}
+.kn .speed path:nth-child(2){animation-delay:-.15s}.kn .speed path:nth-child(3){animation-delay:-.3s}
+@keyframes kn-wag{from{transform:rotate(-8deg)}to{transform:rotate(10deg)}}
+@keyframes kn-cape{from{transform:skewX(-4deg)}to{transform:skewX(6deg)}}
+@keyframes kn-flicker{from{transform:scaleX(.8)}to{transform:scaleX(1.15)}}
+/* Speedlines bleiben nah an der Figur, sonst streifen sie das Punkte-Schild (steht bei weit vorn laufenden Figuren links) */
+@keyframes kn-speed{from{transform:translateX(6px);opacity:0}40%{opacity:.9}to{transform:translateX(-2px);opacity:0}}
+/* Stillstand (idle): Körper, Glieder und Requisiten ruhen; nur Zs und Rotzblase beim Schlafen bleiben lebendig */
+.kn.idle .bob,.kn.idle .j,.kn.idle .flames,.kn.idle .speed path,.kn.idle .sparkle{animation:none!important}
 
 /* podium */
 .podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;padding-top:12px}
@@ -140,7 +186,7 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 @keyframes rise{from{transform:scaleY(0)}}
 @keyframes drop{from{transform:translateY(-40px);opacity:0}}
 @media (prefers-reduced-motion:reduce){
-  .fig *,.pfig,.pfig *,.pblock,.flash{animation:none!important}
+  .kn,.kn *,.pfig,.pblock,.flash{animation:none!important}
   .runner-wrap,.trail{transition:none}
 }
 
@@ -162,9 +208,6 @@ input[type=number]{width:90px}
 .primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:12px 20px;font-weight:700;font-size:16px}
 .primary:disabled{opacity:.45;cursor:default}
 .summary{color:var(--muted);font-size:14px;margin:0}
-.colors{display:flex;gap:8px;flex-wrap:wrap}
-.colors button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
-.colors button[aria-pressed="true"]{border-color:var(--ink)}
 .side{display:flex;flex-direction:column;gap:24px}
 .feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .feed li{display:grid;grid-template-columns:10px 1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
@@ -180,11 +223,6 @@ input[type=number]{width:90px}
 .legend{font-size:13px;color:var(--muted);margin:0}
 .banner{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:600;box-shadow:var(--shadow);z-index:10;max-width:calc(100% - 32px)}
-.avatars{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
-.avatars button{border:2px solid transparent;background:var(--track);color:#fff;border-radius:12px;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;letter-spacing:.02em}
-.avatars button:hover{border-color:rgba(255,255,255,.5)}
-.avatars button[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
-.avatars svg{width:52px;height:57px;display:block;overflow:visible}
 .whofig{display:inline-block;width:34px;height:37px;background:var(--track);border-radius:10px;padding:2px}
 .whofig svg{width:100%;height:100%;display:block;overflow:visible}
 .row-btns{display:flex;flex-wrap:wrap;gap:10px}
@@ -225,8 +263,6 @@ input[type=number]{width:90px}
   #dateIn{flex:1 1 150px}
   #minIn{flex:1 1 100%;width:auto}
   .primary,.secondary{width:100%;min-height:52px;font-size:17px}
-  .colors button{width:40px;height:40px}
-  .avatars{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
   .feed li{padding:6px 0}
   .feed .del{min-width:44px;min-height:40px}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
@@ -243,30 +279,129 @@ input[type=number]{width:90px}
 .factors i{width:10px;height:10px;border-radius:50%;display:inline-block}
 
 /* ---------- Figuren-Baukasten ---------- */
-.grid > *,.side > *,.card,.field,.builder{min-width:0}
-.builder{display:flex;flex-direction:column;gap:14px}
-.b-stage{display:grid;grid-template-columns:auto 1fr;gap:10px 16px;align-items:center;background:var(--track);border-radius:14px;padding:12px 16px;color:#fff}
-.b-big svg{width:118px;height:129px;display:block;overflow:visible}
-.b-side{display:flex;flex-direction:column;gap:10px;min-width:0}
-.b-side .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.8}
-.b-poses{display:flex;flex-wrap:wrap;gap:6px}
-.b-poses button,.b-random{background:rgba(255,255,255,.14);border:1.5px solid transparent;color:#fff;border-radius:999px;padding:6px 12px;font-weight:600;font-size:13px;min-height:34px}
-.b-poses button[aria-pressed="true"]{border-color:var(--gold);background:rgba(255,255,255,.22)}
-.b-random{align-self:flex-start;border-color:rgba(255,255,255,.4)}
-.b-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
-.b-tabs button{flex:none;border:1.5px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 14px;font-weight:600;font-size:14px;min-height:38px}
-.b-tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.b-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
-.b-opts button{position:relative;border:2px solid transparent;background:var(--track);color:#fff;border-radius:12px;padding:6px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;letter-spacing:.02em}
-.b-opts button:hover{border-color:rgba(255,255,255,.5)}
-.b-opts button[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
-.b-opts button:disabled{cursor:not-allowed;opacity:.55}
-.b-opts svg{width:56px;height:61px;display:block;overflow:visible}
-.b-opts .lock{position:absolute;top:4px;right:4px;background:var(--gold);color:#1a1405;border-radius:999px;font-size:10px;padding:1px 6px;font-weight:800}
-.swatches{display:flex;flex-wrap:wrap;gap:10px}
-.swatches button{width:42px;height:42px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
-.swatches button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+/* Schmale Karte (Handy): Bühne und Reiter kleben oben. Karte ab 460 px: Bühne links (klebt), Auswahl rechts. */
+.grid > *,.side > *,.card,.field,.builder,.b-host{min-width:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.b-host{container-type:inline-size}
+.builder{--pad:20px;display:flex;flex-direction:column;gap:12px}
+.b-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:flex;flex-direction:column;gap:8px;margin:0 calc(-1 * var(--pad));padding:6px var(--pad) 8px;background:var(--surface);box-shadow:0 9px 10px -11px rgba(16,27,51,.5)}
+/* oben Luft für Partyhut, Bommel und Hasenohren, die über den Figurenrahmen ragen */
+.b-stage{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px 12px;padding:10px 10px 4px 4px;border-radius:14px;background:var(--track);color:#fff}
+.b-big svg{width:92px;height:101px;display:block}
+.quick .b-big svg{width:84px;height:92px}
+.b-side{display:flex;flex-direction:column;gap:8px;min-width:0}
+.b-side p{margin:0;font-size:13px;line-height:1.35}
+.b-act,.b-poses button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 10px;border-radius:12px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:13px;white-space:nowrap}
+.b-act:hover,.b-poses button:hover{background:rgba(255,255,255,.24)}
+.b-act[aria-disabled="true"]{opacity:.4;cursor:default;background:rgba(255,255,255,.14)}
+.b-cycle small{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.8}
+.b-poses{display:none}
+.b-poses button{border-color:transparent;font-weight:600;padding:0 6px}
+.b-poses [aria-pressed="true"]{border-color:var(--gold);background:rgba(255,255,255,.24)}
+.b-acts{display:flex;gap:6px}
+.b-acts .b-act{flex:1 1 auto;min-width:0}
+.b-acts .b-undo{flex:none;width:44px;padding:0}
+.quick .b-acts .b-act{flex:0 1 auto;padding:0 16px}
+.quick .b-acts .b-undo{flex:none;padding:0}
+.b-undo span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* Fokus auf der blauen Bühne weiß (Gold ist dort schon die gewählte Pose) */
+.b-stage :focus-visible{outline-color:#fff}
+.b-nav:empty,.b-tryslot:empty{display:none}
+.b-try{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1.5px dashed var(--gold);border-radius:10px;background:var(--track);color:#fff;font-size:12.5px;line-height:1.3}
+.b-try > .ic{flex:none;color:var(--gold)}
+.b-try span{flex:1 1 auto;min-width:0}
+.b-try button{flex:none;min-height:36px;padding:0 12px;border:0;border-radius:8px;background:var(--gold);color:#1a1405;font-weight:800;font-size:13px}
+/* Bereiche (Segmente) und Unterpunkte: umbrechen statt seitlich scrollen */
+.b-nav{display:flex;flex-direction:column;gap:8px}
+.b-areas{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.b-areas button{min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:700;font-size:15px}
+.b-areas button:hover{color:var(--ink)}
+.b-areas [aria-selected="true"],.b-areas [aria-selected="true"]:hover{background:var(--ink);color:var(--bg)}
+.b-subs{display:flex;flex-wrap:wrap;gap:6px}
+.b-subs button{flex:1 1 auto;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:38px;padding:2px 10px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);font-weight:600;font-size:14px;line-height:1.1}
+.b-subs button:hover{border-color:var(--muted)}
+.b-subs [aria-selected="true"],.b-subs [aria-selected="true"]:hover{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.b-subs .off{border-style:dashed;background:transparent;color:var(--muted)}
+.b-subs small{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+/* Auswahl */
+.b-main,.b-panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.p-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
+.p-head h4{margin:0;font-family:var(--display);font-size:21px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;line-height:1.1}
+.p-head h4 span{margin-left:4px;font-family:var(--body);font-size:15px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
+.b-mini{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface-2);font-weight:600;font-size:13px}
+.b-mini:hover{border-color:var(--muted)}
+.b-hint{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--muted);font-size:13px;line-height:1.4}
+.b-hint > .ic{flex:none}
+.b-hint span{flex:1 1 180px}
+.b-hint button{min-height:36px;padding:0 12px;border:1.5px solid var(--ink);border-radius:8px;background:transparent;color:var(--ink);font-weight:700;font-size:13px}
+.b-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.b-opt{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:4px 2px 6px;border:2px solid transparent;border-radius:12px;background:var(--track);color:#fff;font-size:12px;font-weight:700;line-height:1.2;text-align:center;hyphens:auto;overflow-wrap:anywhere}
+.b-opt:hover{border-color:rgba(255,255,255,.5)}
+/* Fokus anders als die (goldene) Auswahl: Ring in Schriftfarbe mit Abstand */
+.b-opt:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.b-opt .th{display:grid;place-items:center;height:62px}
+/* Ausschnitte: hohe Hüte, Ohren und Zöpfe dürfen oben und seitlich etwas überstehen, unten wird gerade abgeschnitten */
+.b-opt .th svg{display:block;overflow:visible;clip-path:inset(-14px -4px 0 -4px)}
+.k-portrait .th svg,.k-head .th svg{width:62px;height:62px}
+.k-face .th svg{width:60px;height:60px;overflow:hidden;clip-path:none}
+.k-feet .th svg{width:66px;height:33px;overflow:hidden;clip-path:none}
+.k-full .th svg{width:62px;height:62px}
+.b-opt[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.b-opt[aria-pressed="true"]::after{content:"";position:absolute;top:4px;left:4px;width:17px;height:17px;border-radius:50%;background:var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a1405' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/12px no-repeat}
+.b-opt.locked{background:var(--track-2)}
+.b-opt.locked .th{filter:grayscale(.8);opacity:.55}
+.b-opt.trying{border-style:dashed;border-color:var(--gold)}
+.b-opt.trying .th{filter:none;opacity:1}
+.b-opt .req{margin-top:1px;padding:1px 6px;border-radius:999px;background:rgba(0,0,0,.3);color:#FFE08A;font-size:10.5px;white-space:nowrap}
+.b-opt .lk{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:rgba(0,0,0,.4);color:#FFE08A}
+/* Farben mit Namen */
+.b-color,.b-sec{display:flex;flex-direction:column;gap:8px}
+.b-color .lbl,.b-sec .lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.b-color .lbl b,.b-sec .lbl b{margin-left:4px;font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.b-sw{display:flex;flex-wrap:wrap;gap:6px}
+/* Ring in --muted: auch Schwarz im Dunkelmodus und Weiß/Silber im Hellmodus heben sich ab (mind. 3:1) */
+.b-sw button{display:grid;place-items:center;width:42px;height:42px;padding:0;border:3px solid var(--surface);border-radius:50%;background:var(--c);box-shadow:0 0 0 1.5px var(--muted),inset 0 0 0 1px rgba(255,255,255,.22);color:var(--k)}
+.b-sw [aria-pressed="true"]{box-shadow:0 0 0 2.5px var(--ink),inset 0 0 0 1px rgba(255,255,255,.22)}
+.b-jerseys{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.b-jc{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 10px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2);font-weight:600;font-size:14px;text-align:left}
+.b-jc:hover{border-color:var(--muted)}
+.b-jc .shirt{width:28px;height:28px;flex:none}
+.b-jc .shirt path{stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round}
+.b-jc .ic{margin-left:auto;flex:none}
+.b-jc[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+/* Schnellstart bei der Anmeldung */
+.b-more{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:52px;padding:10px 14px;border:1.5px dashed var(--line);border-radius:12px;background:var(--surface-2);font-weight:700;font-size:15px;text-align:left}
+.b-more:hover{border-color:var(--muted)}
+.b-more small{display:block;font-weight:500;font-size:13px;color:var(--muted)}
+.b-less{align-self:flex-start;min-height:40px}
 .b-note{font-size:13px;color:var(--muted);margin:0}
+@container (min-width:460px){
+  .builder:not(.quick){display:grid;grid-template-columns:188px minmax(0,1fr);grid-template-rows:auto auto auto 1fr;gap:0 18px;align-items:start}
+  .builder:not(.quick) .b-top{display:contents;position:static}
+  /* oben mehr Luft: Partyhut, Bommel und Hasenohren ragen über den Figurenrahmen */
+  .builder:not(.quick) .b-stage{grid-column:1;grid-row:1 / span 4;position:sticky;top:12px;grid-template-columns:minmax(0,1fr);gap:8px;padding:30px 10px 10px}
+  .builder:not(.quick) .b-big{justify-self:center}
+  .builder:not(.quick) .b-big svg{width:160px;height:175px}
+  .builder:not(.quick) .b-poses{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .builder:not(.quick) .b-cycle{display:none}
+  .builder:not(.quick) .b-acts{flex-direction:column}
+  .builder:not(.quick) .b-acts .b-undo{width:auto;padding:0 10px}
+  .builder:not(.quick) .b-undo span{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+  .builder:not(.quick) .b-nav{grid-column:2;grid-row:1;margin-bottom:12px}
+  .builder:not(.quick) .b-tryslot{grid-column:2;grid-row:2;margin-bottom:12px}
+  .builder:not(.quick) .b-main{grid-column:2;grid-row:3}
+}
+/* sehr schmale Karte (Handy mit 320 px): kleinere Figur, „Würfeln“ ohne „Alles“ (bleibt für Screenreader) */
+@container (max-width:300px){
+  .b-big svg{width:80px;height:88px}
+  .b-acts .b-all{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .quick .b-acts .b-act{padding:0 10px}
+  .quick .b-acts .b-undo{padding:0}
+}
+/* niedrige Fenster (Handy quer): der klebende Block würde die Auswahl fast ganz verdecken */
+@media (max-height:520px){
+  .b-top,.builder:not(.quick) .b-stage{position:static}
+}
 
 /* ---------- Einladen und installieren ---------- */
 .invite{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
@@ -277,11 +412,15 @@ input[type=number]{width:90px}
 .ios-hint{font-size:13px;color:var(--muted);margin:0}
 
 @media (max-width:760px){
-  .b-stage{grid-template-columns:1fr;justify-items:center;text-align:center}
-  .b-side{align-items:center}
-  .b-random{align-self:center}
-  .b-poses{justify-content:center}
-  .b-opts{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+  .builder{--pad:16px}
+  .b-areas{padding:2px;gap:2px}
+  .b-areas button,.b-subs button,.b-act,.b-poses button,.b-mini,.b-hint button,.b-try button,.b-less{min-height:44px}
+  .b-sw button{width:44px;height:44px}
+  .b-opt .th{height:58px}
+  .k-portrait .th svg,.k-head .th svg{width:58px;height:58px}
+  .k-face .th svg{width:56px;height:56px}
+  .k-feet .th svg{width:62px;height:31px}
+  .k-full .th svg{width:58px;height:58px}
   .invite{grid-template-columns:1fr;justify-items:start}
   .invite-actions .secondary{width:100%}
 }

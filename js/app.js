@@ -18,7 +18,12 @@ const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 const LEAD_POS = 0.88;
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const MOBILE = matchMedia('(max-width: 760px)');
-const { figureSVG, normalize, randomAvatar, BASES, PARTS, SKINS, HAIR_COLORS, JERSEYS } = window.Figure;
+const { figureSVG, normalize, allowed, randomAvatar, BASES, PARTS, SKINS, HAIR_COLORS, JERSEYS } = window.Figure;
+// Trikotfarben kommen aus der gemeinsamen Datenbank: nur Hex-Werte ins HTML
+const hexColor = (c, d = '#FFFFFF') => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c) ? c : d;
+// Startfigur bei der Anmeldung: zufällig, aber ohne Hut und Zubehör
+const startAvatar = () => normalize({ ...randomAvatar(0), hat: 'keine', extra: 'nichts' });
+const builderState = (av, color) => ({ av, color, area: 'figur', sub: 'base', pose: 'cheer', hist: [], tryOn: null, more: false });
 
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -45,7 +50,7 @@ const S = {
   me: lsGet('monatslauf.me'),
   view: mkey(today()),
   form: { date: today(), minutes: 60, sport: null, custom: false },
-  login: { name: '', color: JERSEYS[0], av: normalize(randomAvatar(0)), tab: 'base', pose: 'cheer' },
+  login: { name: '', ...builderState(startAvatar(), JERSEYS[0]) },
   edit: null,
   busy: false, readOnly: false, rankSnapshot: null, cheered: new Set(),
 };
@@ -145,14 +150,18 @@ function updateFab() {
 }
 function renderWho() {
   const p = S.players[S.me];
-  $('#who').innerHTML = p ? `<span class="whofig">${figureSVG({ id: S.me, uid: 'w', avatar: p.avatar, color: p.color, wins: winCounts()[S.me] || 0, pose: 'cheer', idle: true })}</span><span>${esc(p.name)}</span><button class="linkbtn" id="editAv">Figur bauen</button><button class="linkbtn" id="logout">Abmelden</button>` : '';
+  $('#who').innerHTML = p ? `<span class="whofig">${figureSVG({ id: S.me, uid: 'w', avatar: p.avatar, color: p.color, wins: winCounts()[S.me] || 0, portrait: true, idle: true })}</span><span>${esc(p.name)}</span><button class="linkbtn" id="editAv">Figur bauen</button><button class="linkbtn" id="logout">Abmelden</button>` : '';
   const lo = $('#logout'); if (lo) lo.onclick = () => { S.me = null; S.edit = null; lsSet('monatslauf.me', null); render(); };
   const ea = $('#editAv'); if (ea) ea.onclick = () => {
-    S.edit = { av: normalize(p.avatar, S.me), color: p.color, tab: 'base', pose: 'cheer' };
+    S.edit = builderState(normalize(p.avatar, S.me), hexColor(p.color, JERSEYS[0]));
     renderEntry(); updateFab();
     $('#entryCard').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+    // Tastatur und Screenreader landen im Baukasten, nicht oben in der Kopfzeile
+    $('#entryCard [role=tab][aria-selected=true]')?.focus({ preventScroll: true });
   };
 }
+// nach Speichern oder Abbrechen der Figur: Fokus auf die Kartenüberschrift (der gedrückte Knopf ist dann weg)
+function focusCard() { const h = $('#entryCard h3'); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } }
 function renderMonth() {
   $('#monthTitle').textContent = monthName(S.view);
   const earliest = S.entries.reduce((a, e) => mkey(e.date) < a ? mkey(e.date) : a, current());
@@ -173,7 +182,7 @@ function podiumHTML(month) {
   const ranked = Object.entries(t).filter(([, r]) => r.total > 0).sort((a, b) => b[1].total - a[1].total).map(([id, r], i) => ({ id, place: i + 1, ...r }));
   if (!ranked.length) return '';
   const col = r => r ? `<div class="pcol pl${r.place}">
-      <div class="pfig">${figureSVG({ id: r.id, uid: `p${month}${r.id}`, avatar: S.players[r.id]?.avatar, color: S.players[r.id]?.color || '#fff', wins: wc[r.id] || 0, pose: r.place === 1 ? 'cheer' : 'run', idle: r.place !== 1 })}</div>
+      <div class="pfig">${figureSVG({ id: r.id, uid: `p${month}${r.id}`, avatar: S.players[r.id]?.avatar, color: hexColor(S.players[r.id]?.color), wins: wc[r.id] || 0, pose: r.place === 1 ? 'cheer' : 'run', idle: r.place !== 1 })}</div>
       <div class="pname">${esc(pname(r.id))}</div>
       <div class="pblock"><b>${r.place}</b><span>${fmtPts(r.total)}</span></div></div>` : '';
   const rest = ranked.slice(3);
@@ -223,7 +232,7 @@ function renderTrack() {
     const label = `<div class="nm"><b>${i + 1}</b><span>${esc(r.name)}</span>${lead ? '<em class="leadtag">führt</em>' : ''}</div>
       <div class="meta"><span>${fmtPts(r.total)} · ${fmtMin(r.minutes)}</span>${r.streak >= 2 ? `<span class="streak" title="${r.streak} Tage in Folge">${flameIcon}${r.streak}</span>` : ''}${r.wins ? `<span>${r.wins}× Monatssieg</span>` : ''}</div>`;
     const lbl = el.querySelector('.label'); if (lbl._h !== label) { lbl.innerHTML = label; lbl._h = label; }
-    const fig = figureSVG({ id: r.id, uid: 'l' + r.id, avatar: r.avatar, color: r.color || '#fff', wins: r.wins, pose, idle: r.total === 0 || sleep, lead, sleep, web });
+    const fig = figureSVG({ id: r.id, uid: 'l' + r.id, avatar: r.avatar, color: hexColor(r.color), wins: r.wins, pose, idle: r.total === 0 || sleep, lead, sleep, web });
     const fe = el.querySelector('.fig'); if (fe._h !== fig) { fe.innerHTML = fig; fe._h = fig; }
     const bub = r.total === 0 ? 'noch am Start' : i === 0 || r.total === max ? fmtPts(r.total) : `–${fmtPts(max - r.total)}`;
     const be = el.querySelector('.bubble'); be.textContent = bub; be.title = `Gesamt: ${fmtPts(r.total)}`;
@@ -319,62 +328,206 @@ function handleWriteError(e) {
 }
 
 /* ---------- Figuren-Baukasten ---------- */
-const TABS = [['base', 'Figur'], ['skin', 'Haut'], ['hair', 'Frisur'], ['hairColor', 'Haarfarbe'], ['beard', 'Bart'], ['hat', 'Kopf'], ['glasses', 'Brille'], ['extra', 'Extra'], ['shoes', 'Schuhe'], ['jersey', 'Trikot']];
-const HUMAN_ONLY = ['skin', 'hair', 'hairColor', 'beard'];
-const HEAD_TABS = ['hair', 'beard', 'hat', 'glasses'];
+// Drei Bereiche mit Unterpunkten. Bei Tieren bleiben die Mensch-Unterpunkte sichtbar (gestrichelt, mit Erklärung).
+const AREAS = [['figur', 'Figur', ['base', 'skin']], ['kopf', 'Kopf', ['hair', 'beard', 'glasses', 'hat']], ['outfit', 'Outfit', ['jersey', 'shoes', 'extra']]];
+const SUB = { base: 'Grundfigur', skin: 'Hautfarbe', hair: 'Frisur', beard: 'Bart', glasses: 'Brille', hat: 'Hut', jersey: 'Trikot', shoes: 'Schuhe', extra: 'Zubehör', hairColor: 'Haarfarbe' };
+const HUMAN_ONLY = ['skin', 'hair', 'beard'];
 const PREVIEW_POSES = [['cheer', 'Jubeln'], ['run', 'Laufen'], ['climb', 'Klettern'], ['workout', 'Training'], ['bike', 'Fahrrad'], ['yoga', 'Yoga']];
-function thumb(av, color, uid, crop) {
-  const svg = figureSVG({ uid, avatar: av, color, wins: 99, pose: 'cheer', idle: true });
-  return crop ? svg.replace('viewBox="-12 -18 64 70"', 'viewBox="8 -14 32 35" style="overflow:hidden"') : svg;
-}
-function builderHTML(B, wins, prefix) {
-  const human = B.av.base === 'mensch';
-  const tabs = TABS.filter(([k]) => human || !HUMAN_ONLY.includes(k));
-  if (!tabs.some(t => t[0] === B.tab)) B.tab = 'base';
-  const swatch = (key, list, cur) => `<div class="swatches">${list.map(c => `<button data-set="${key}:${c}" style="background:${c}" aria-label="Farbe ${c}" aria-pressed="${cur === c}"></button>`).join('')}</div>`;
-  let opts;
-  if (B.tab === 'base') opts = `<div class="b-opts">${BASES.map(b => `<button data-set="base:${b.id}" aria-pressed="${B.av.base === b.id}">${thumb({ ...B.av, base: b.id }, B.color, `${prefix}b${b.id}`)}<span>${b.label}</span></button>`).join('')}</div>`;
-  else if (B.tab === 'skin') opts = swatch('skin', SKINS, B.av.skin);
-  else if (B.tab === 'hairColor') opts = swatch('hairColor', HAIR_COLORS, B.av.hairColor);
-  else if (B.tab === 'jersey') opts = swatch('jersey', JERSEYS, B.color);
-  else opts = `<div class="b-opts">${PARTS[B.tab].map(([id, label, need]) => {
-    const locked = (need || 0) > wins;
-    return `<button data-set="${B.tab}:${id}" aria-pressed="${B.av[B.tab] === id}" ${locked ? 'disabled' : ''}>${locked ? `<span class="lock">${need} ${need === 1 ? 'Sieg' : 'Siege'}</span>` : ''}${thumb({ ...B.av, [B.tab]: id }, B.color, `${prefix}${B.tab}${id}`, HEAD_TABS.includes(B.tab))}<span>${label}</span></button>`;
+// Farbnamen in derselben Reihenfolge wie die Listen in js/figure.js
+const COLORS = { skin: SKINS, hairColor: HAIR_COLORS, jersey: JERSEYS };
+const COLOR_NAMES = {
+  skin: ['Sehr hell', 'Hell', 'Mittel', 'Dunkel', 'Sehr dunkel'],
+  hairColor: ['Schwarz', 'Braun', 'Blond', 'Rot', 'Silber', 'Pink', 'Blau'],
+  jersey: ['Orange', 'Gelb', 'Weiß', 'Mint', 'Rosa', 'Limette', 'Flieder', 'Himmelblau', 'Rot', 'Schwarz'],
+};
+const colorName = (k, c) => COLOR_NAMES[k][COLORS[k].findIndex(x => x.toLowerCase() === String(c).toLowerCase())] || 'eigene Farbe';
+const isLight = c => { const n = parseInt(String(c).slice(1), 16) || 0; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) > 150; };
+const need = (k, v) => PARTS[k]?.find(o => o[0] === v)?.[2] || 0;
+const MAX_NEED = Math.max(...Object.values(PARTS).flat().map(o => o[2] || 0));
+const siege = n => `${n} ${n === 1 ? 'Sieg' : 'Siegen'}`;
+const valueName = (k, v) => COLORS[k] ? colorName(k, v) : k === 'base' ? BASES.find(b => b.id === v)?.label || v : PARTS[k]?.find(o => o[0] === v)?.[1] || v;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const pickOther = (a, cur) => pick(a.filter(x => x !== cur)) ?? cur;
+/* Ausschnitte der Vorschaubilder als viewBox in Figur-Koordinaten (js/figure.js). Porträt (portrait:true, Pose "stand"):
+   Kopfmitte 32/31, Kopf 25 × 24, Schultern ab y ≈ 41, Zopf bis x ≈ 10.5, Dutt bis y ≈ 6. Ganze Figur in Pose "cheer":
+   Hände bei y ≈ 32, Schuhe bei y ≈ 61–66, Boden bei 66. Hohe Hüte und Ohren dürfen oben überstehen (css/app.css). */
+const CROPS = {
+  portrait: ['10.5 5 43 43', true],   // Grundfigur, Hut: Kopf und Schultern
+  head: ['12 8.5 40 40', true],       // Frisur: nur der Kopf
+  face: ['18.5 19.5 27 27', true],    // Brille, Bart: Gesicht
+  feet: ['18.5 54.5 27 13.5', false], // Schuhe
+  full: ['12 14 40 40', false],       // Zubehör: jubelnd von Kopf bis Hüfte, damit Umhang, Schal, Medaille und Kopfhörer groß genug sind
+};
+const THUMB = { base: 'portrait', hat: 'portrait', hair: 'head', beard: 'face', glasses: 'face', shoes: 'feet', extra: 'full' };
+const thumb = (av, color, uid, kind) => { const [vb, portrait] = CROPS[kind]; return figureSVG({ uid, avatar: av, color, wins: 99, pose: 'cheer', idle: true, portrait }).replace(/viewBox="[^"]*"/, `viewBox="${vb}"`); };
+const icon = (d, w = 18) => `<svg class="ic" viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  undo: icon('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
+  dice: icon('<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor"/>', 16),
+  lock: icon('<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>', 12),
+  next: icon('<path d="m9 6 6 6-6 6"/>', 16),
+  check: icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  info: icon('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>', 16),
+};
+const shirtIcon = c => `<svg class="shirt" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 2.5h2.6c.4 1.9 1.1 2.8 2.2 2.8s1.8-.9 2.2-2.8h2.6l1 4.6-1.9 1.6v12.8H8.1V8.7L6.2 7.1z" fill="${c}"/></svg>`;
+const hint = (text, act, label) => `<p class="b-hint">${ICON.info}<span>${text}</span>${act ? `<button data-act="${act}" data-key="${act}">${label}</button>` : ''}</p>`;
+
+function optsHTML(B, wins, id, k) {
+  const items = k === 'base' ? BASES.map(b => [b.id, b.label]) : PARTS[k], kind = THUMB[k];
+  // gewählt ist, was die Figur wirklich trägt: ein gespeichertes, inzwischen gesperrtes Teil (Siege zählen rückwirkend) blendet allowed() aus
+  const eff = allowed(B.av, wins);
+  // Grundfigur, Frisur, Bart und Brille ohne Hut und Kopfhörer zeigen, sonst verdecken sie genau das, worum es geht
+  const av = ['base', 'hair', 'beard', 'glasses'].includes(k) ? { ...eff, hat: 'keine', extra: eff.extra === 'kopfhoerer' ? 'nichts' : eff.extra } : eff;
+  return `<div class="b-opts k-${kind}" role="group" aria-label="${SUB[k]}">${items.map(([v, label, n = 0]) => {
+    const locked = n > wins, trying = B.tryOn?.k === k && B.tryOn.v === v;
+    return `<button class="b-opt${locked ? ' locked' : ''}${trying ? ' trying' : ''}" data-act="set" data-k="${k}" data-v="${v}" data-key="o-${k}-${v}" aria-pressed="${eff[k] === v}"${locked ? ' aria-disabled="true"' : ''}>`
+      + `<span class="th">${thumb({ ...av, [k]: v }, B.color, id + k + v, kind)}</span><span class="nm">${label}</span>${locked ? `<span class="lk">${ICON.lock}</span><span class="req">ab ${siege(n)}</span>` : ''}</button>`;
   }).join('')}</div>`;
-  return `<div class="builder">
-    <div class="b-stage">
-      <div class="b-big">${figureSVG({ uid: prefix + 'big', avatar: B.av, color: B.color, wins, pose: B.pose })}</div>
-      <div class="b-side">
-        <span class="lbl">Vorschau</span>
-        <div class="b-poses">${PREVIEW_POSES.map(([p, l]) => `<button data-pose="${p}" aria-pressed="${B.pose === p}">${l}</button>`).join('')}</div>
-        <button class="b-random" data-random="1">Zufällige Figur</button>
-      </div>
-    </div>
-    <div class="b-tabs" role="tablist">${tabs.map(([k, l]) => `<button data-tab="${k}" role="tab" aria-pressed="${B.tab === k}" aria-selected="${B.tab === k}">${l}</button>`).join('')}</div>
-    ${opts}
-    <p class="b-note">${wins ? `Du hast ${wins} ${wins === 1 ? 'Monatssieg' : 'Monatssiege'}.` : 'Noch kein Monatssieg.'} Mit Siegen schaltest du Pilotenbrille, goldene Schuhe, Umhang, Medaille und Krone frei.</p>
-  </div>`;
 }
-function bindBuilder(card, B, wins, rerender) {
-  card.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { B.tab = b.dataset.tab; rerender(); card.querySelector(`[data-tab="${B.tab}"]`)?.focus(); });
-  card.querySelectorAll('[data-pose]').forEach(b => b.onclick = () => { B.pose = b.dataset.pose; rerender(); });
-  card.querySelectorAll('[data-random]').forEach(b => b.onclick = () => { B.av = normalize(randomAvatar(wins)); B.color = JERSEYS[Math.floor(Math.random() * JERSEYS.length)]; rerender(); });
-  card.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
-    const [k, v] = b.dataset.set.split(':');
-    if (k === 'jersey') B.color = v; else B.av = { ...B.av, [k]: v };
-    const tabsScroll = card.querySelector('.b-tabs')?.scrollLeft || 0;
-    rerender();
-    const t = card.querySelector('.b-tabs'); if (t) t.scrollLeft = tabsScroll;
-    card.querySelector(`[data-set="${b.dataset.set}"]`)?.focus({ preventScroll: true });
-  });
+function swatchesHTML(B, k) {
+  const cur = k === 'jersey' ? B.color : B.av[k];
+  return `<div class="b-sw" role="group" aria-label="${SUB[k]}">${COLORS[k].map((c, i) => {
+    const n = COLOR_NAMES[k][i], on = c === cur;
+    return `<button data-act="set" data-k="${k}" data-v="${c}" data-key="c-${k}-${c.slice(1)}" aria-pressed="${on}" aria-label="${n}" title="${n}" style="--c:${c};--k:${isLight(c) ? '#10182A' : '#FFFFFF'}">${on ? ICON.check : ''}</button>`;
+  }).join('')}</div>`;
 }
+const colorRow = (B, k, label) => `<div class="b-color"><span class="lbl">${label} <b>${colorName(k, k === 'jersey' ? B.color : B.av[k])}</b></span>${swatchesHTML(B, k)}</div>`;
+const jerseysHTML = B => `<div class="b-jerseys" role="group" aria-label="Trikotfarbe">${JERSEYS.map((c, i) => {
+  const on = c === B.color;
+  return `<button class="b-jc" data-act="set" data-k="jersey" data-v="${c}" data-key="c-jersey-${c.slice(1)}" aria-pressed="${on}">${shirtIcon(c)}<span>${COLOR_NAMES.jersey[i]}</span>${on ? ICON.check : ''}</button>`;
+}).join('')}</div>`;
+
+// Bühne: große Vorschau (mit Anprobe), Pose, Rückgängig, Würfeln
+function stageParts(B, wins, id, quick) {
+  const t = B.tryOn, pl = PREVIEW_POSES.find(p => p[0] === B.pose)?.[1] || '';
+  // Anprobe: gesperrtes Teil nur in der Vorschau zeigen (mit genug Siegen gerendert), B.av bleibt unberührt
+  const fig = figureSVG({ uid: id + 'big', avatar: t ? { ...allowed(B.av, wins), [t.k]: t.v } : B.av, color: B.color, wins: t ? 99 : wins, pose: quick ? 'cheer' : B.pose });
+  const undo = `<button class="b-act b-undo" data-act="undo" data-key="undo" aria-disabled="${!B.hist.length}" title="Letzte Änderung zurücknehmen">${ICON.undo}<span>Rückgängig</span></button>`;
+  const side = quick
+    ? `<p>Such dir Figur und Trikot aus. Alles andere kannst du später umbauen.</p><div class="b-acts"><button class="b-act" data-act="rand" data-key="rand">${ICON.dice}Würfeln</button>${undo}</div>`
+    : `<div class="b-poses" role="group" aria-label="Pose der Vorschau">${PREVIEW_POSES.map(([p, l]) => `<button data-act="pose" data-v="${p}" data-key="p-${p}" aria-pressed="${B.pose === p}">${l}</button>`).join('')}</div>
+      <button class="b-act b-cycle" data-act="cycle" data-key="cycle" title="Nächste Pose"><small>Pose</small>${pl}<span class="sr-only">, wechseln</span>${ICON.next}</button>
+      <div class="b-acts">${undo}<button class="b-act" data-act="rand" data-key="rand">${ICON.dice}<span class="b-all">Alles </span>würfeln</button></div>`;
+  // Anprobe-Hinweis steht über der Auswahl, nicht im klebenden Block (der würde auf dem Handy sonst um ein Viertel höher)
+  const tr = t ? `<div class="b-try">${ICON.lock}<span>Anprobe: <b>${valueName(t.k, t.v)}</b> · frei ab ${siege(need(t.k, t.v))}. Wird nicht gespeichert.</span><button data-act="untry" data-key="untry">Ablegen</button></div>` : '';
+  return { fig, side, try: tr };
+}
+function navHTML(B, id) {
+  const human = B.av.base === 'mensch', [, label, subs] = AREAS.find(a => a[0] === B.area);
+  const tab = (key, act, v, sel, text, cls = '') => `<button role="tab" id="${id}-${key}"${cls ? ` class="${cls}"` : ''} data-act="${act}" data-v="${v}" data-key="${key}" aria-selected="${sel}" aria-controls="${id}-panel" tabindex="${sel ? 0 : -1}">${text}</button>`;
+  return `<div class="b-areas" role="tablist" aria-label="Bereich">${AREAS.map(([a, l]) => tab('a-' + a, 'area', a, a === B.area, l)).join('')}</div>
+    <div class="b-subs" role="tablist" aria-label="${label}">${subs.map(s => {
+      const off = !human && HUMAN_ONLY.includes(s);
+      return tab('s-' + s, 'sub', s, s === B.sub, off ? `${SUB[s]} <small>nur Mensch</small>` : SUB[s], off ? 'off' : '');
+    }).join('')}</div>`;
+}
+function panelHTML(B, wins, id, collapsible) {
+  const s = B.sub, human = B.av.base === 'mensch';
+  const head = (title, roll = true) => `<div class="p-head"><h4>${title}</h4>${roll ? `<button class="b-mini" data-act="roll" data-key="roll">${ICON.dice}${SUB[s]} würfeln</button>` : ''}</div>`;
+  let body;
+  if (!human && HUMAN_ONLY.includes(s)) body = head(SUB[s], false) + hint(`${SUB[s]} gibt es nur für die Figur Mensch.`, 'human', 'Zu Mensch wechseln');
+  else if (s === 'skin') body = head(`Hautfarbe <span>${colorName('skin', B.av.skin)}</span>`) + swatchesHTML(B, 'skin');
+  else if (s === 'jersey') body = head(`Trikot <span>${colorName('jersey', B.color)}</span>`) + jerseysHTML(B);
+  else {
+    body = head(SUB[s]);
+    if (s === 'base' && !human) body += hint('Tiere haben ihr eigenes Fell. Hut, Brille und Outfit passen allen.');
+    if (s === 'hair' && (allowed(B.av, wins).hat !== 'keine' || B.tryOn?.k === 'hat')) body += hint('Zum Aussuchen zeigen wir die Frisuren ohne Hut.', 'hat-off', 'Hut abnehmen');
+    body += optsHTML(B, wins, id, s);
+    if (s === 'hair' || s === 'beard') body += colorRow(B, 'hairColor', s === 'beard' ? 'Bart- und Haarfarbe' : 'Haarfarbe');
+  }
+  const note = wins >= MAX_NEED ? `Du hast ${wins} Monatssiege, damit sind alle Teile frei.`
+    : `${wins ? `Du hast ${wins} ${wins === 1 ? 'Monatssieg' : 'Monatssiege'}.` : 'Noch kein Monatssieg.'} Mit Siegen schaltest du Pilotenbrille, goldene Schuhe, Umhang, Medaille und Krone frei. Gesperrte Teile kannst du vorher anprobieren.`;
+  return `<div class="b-panel" role="tabpanel" id="${id}-panel" aria-labelledby="${id}-s-${s}">${body}</div><p class="b-note">${note}</p>`
+    + (collapsible ? `<button class="linkbtn b-less" data-act="less" data-key="less" aria-expanded="true">Weniger anzeigen</button>` : '');
+}
+// Schnellstart bei der Anmeldung: Grundfigur, Hautfarbe, Trikot
+const quickHTML = (B, wins, id) => `<div class="b-sec"><span class="lbl">Grundfigur <b>${valueName('base', B.av.base)}</b></span>${optsHTML(B, wins, id, 'base')}</div>
+  ${B.av.base === 'mensch' ? colorRow(B, 'skin', 'Hautfarbe') : ''}${colorRow(B, 'jersey', 'Trikotfarbe')}
+  <button class="b-more" data-act="more" data-key="more" aria-expanded="false"><span>Mehr anpassen<span class="sr-only">:</span> <small>Frisur, Hut, Brille, Schuhe, Zubehör</small></span>${ICON.next}</button>`;
+
+function rollSub(B, wins) {
+  const s = B.sub;
+  if (s === 'jersey') B.color = pickOther(JERSEYS, B.color);
+  else B.av = { ...B.av, [s]: pickOther(s === 'base' ? BASES.map(b => b.id) : s === 'skin' ? SKINS : PARTS[s].filter(o => (o[2] || 0) <= wins).map(o => o[0]), B.av[s]) };
+}
+/* Baukasten in host einsetzen. B ist der Zustand (S.edit oder S.login) und wird direkt geändert; die Anprobe (B.tryOn)
+   liegt getrennt von B.av und wird nie gespeichert. Neu gezeichnet werden nur Teile, deren HTML sich geändert hat –
+   so läuft die Vorschau beim Reiterwechsel nicht neu an. collapsible: Anmeldung mit Schnellstart und „Mehr anpassen“. */
+function mountBuilder(host, B, wins, id, collapsible = false) {
+  host.innerHTML = `<div class="builder"><div class="b-top"><div class="b-stage"><div class="b-big" data-part="fig" role="img" aria-label="Vorschau deiner Figur"></div>`
+    + `<div class="b-side" data-part="side"></div></div><div class="b-nav" data-part="nav"></div></div>`
+    + `<div class="b-tryslot" data-part="try"></div><div class="b-main" data-part="main"></div><p class="sr-only" aria-live="polite"></p></div>`;
+  const root = host.firstElementChild, live = root.lastElementChild, top = root.querySelector('.b-top');
+  const paint = focusKey => {
+    const quick = collapsible && !B.more;
+    root.classList.toggle('quick', quick);
+    const parts = { ...stageParts(B, wins, id, quick), nav: quick ? '' : navHTML(B, id), main: quick ? quickHTML(B, wins, id) : panelHTML(B, wins, id, collapsible) };
+    for (const [k, h] of Object.entries(parts)) { const el = root.querySelector(`[data-part="${k}"]`); if (el._h !== h) { el.innerHTML = h; el._h = h; } }
+    const f = focusKey && root.querySelector(`[data-key="${focusKey}"]`);
+    if (f && document.activeElement !== f) f.focus({ preventScroll: true });
+  };
+  // Handy: el nicht unter der klebenden Leiste verstecken – nach einem Reiterwechsel beginnt die neue Auswahl
+  // (bzw. der Anprobe-Hinweis) direkt darunter, und per Tastatur fokussierte Elemente rutschen darunter hervor
+  const showBelowTop = (el, gap = 12) => {
+    if (!el || getComputedStyle(top).position !== 'sticky') return;
+    const d = el.getBoundingClientRect().top - top.getBoundingClientRect().bottom - gap;
+    if (d < 0) scrollBy(0, d);
+  };
+  const keepPanelInView = () => showBelowTop(root.querySelector('.b-tryslot:not(:empty)') || root.querySelector('.b-main'));
+  root.addEventListener('focusin', e => { if (!top.contains(e.target)) showBelowTop(e.target, 8); });
+  const push = () => { B.hist.push({ av: B.av, color: B.color }); if (B.hist.length > 40) B.hist.shift(); };
+  const setVal = (k, v) => { if (k === 'jersey') B.color = v; else B.av = { ...B.av, [k]: v }; };
+  const firstSub = () => AREAS.find(a => a[0] === B.area)[2].find(s => B.av.base === 'mensch' || !HUMAN_ONLY.includes(s));
+  root.onclick = e => {
+    const b = e.target.closest('[data-act]'); if (!b || !root.contains(b)) return;
+    const { act, k, v } = b.dataset;
+    let focus = b.dataset.key, msg = '';
+    if (act === 'area') { B.area = v; B.sub = firstSub(); }
+    else if (act === 'sub') B.sub = v;
+    else if (act === 'set' && b.getAttribute('aria-disabled') === 'true') { B.tryOn = { k, v }; msg = `Anprobe: ${valueName(k, v)}, frei ab ${siege(need(k, v))}. Wird nicht gespeichert.`; }
+    else if (act === 'set') {
+      if (B.tryOn?.k === k) B.tryOn = null;
+      if ((k === 'jersey' ? B.color : B.av[k]) !== v) { push(); setVal(k, v); msg = `${SUB[k]}: ${valueName(k, v)}`; }
+    }
+    else if (act === 'pose' || act === 'cycle') {
+      const i = PREVIEW_POSES.findIndex(p => p[0] === B.pose);
+      B.pose = act === 'pose' ? v : PREVIEW_POSES[(i + 1) % PREVIEW_POSES.length][0];
+      msg = `Pose: ${PREVIEW_POSES.find(p => p[0] === B.pose)[1]}`;
+    }
+    else if (act === 'undo') { if (!B.hist.length) return; ({ av: B.av, color: B.color } = B.hist.pop()); B.tryOn = null; msg = 'Letzte Änderung zurückgenommen'; }
+    else if (act === 'rand') { push(); B.av = collapsible && !B.more ? startAvatar() : normalize(randomAvatar(wins)); B.color = pickOther(JERSEYS, B.color); B.tryOn = null; msg = 'Zufällige Figur. Mit Rückgängig kommst du zurück.'; }
+    else if (act === 'roll') { push(); rollSub(B, wins); B.tryOn = null; msg = `${SUB[B.sub]}: ${valueName(B.sub, B.sub === 'jersey' ? B.color : B.av[B.sub])}`; }
+    else if (act === 'untry') { const t = B.tryOn; B.tryOn = null; focus = t && root.querySelector(`[data-key="o-${t.k}-${t.v}"]`) ? `o-${t.k}-${t.v}` : 'undo'; msg = 'Anprobe abgelegt'; }
+    else if (act === 'hat-off') { if (B.av.hat !== 'keine') { push(); setVal('hat', 'keine'); } if (B.tryOn?.k === 'hat') B.tryOn = null; focus = `o-hair-${B.av.hair}`; msg = 'Hut abgenommen'; }
+    else if (act === 'human') { push(); setVal('base', 'mensch'); focus = 's-' + B.sub; msg = 'Grundfigur: Mensch'; }
+    else if (act === 'more') { B.more = true; B.area = 'kopf'; B.sub = firstSub(); focus = 'a-kopf'; }
+    else if (act === 'less') { B.more = false; B.tryOn = null; focus = 'more'; }
+    paint(focus);
+    if (act === 'area' || act === 'sub' || (act === 'set' && b.getAttribute('aria-disabled') === 'true')) keepPanelInView();
+    if (act === 'less') root.querySelector('.b-more').scrollIntoView({ block: 'nearest' });
+    if (msg) live.textContent = msg;
+  };
+  // Pfeiltasten in den Reiterleisten
+  root.onkeydown = e => {
+    const tabs = [...(e.target.closest('[role=tablist]')?.children || [])], i = tabs.indexOf(e.target);
+    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (i < 0 || j === undefined) return;
+    e.preventDefault(); tabs[(j + tabs.length) % tabs.length].click();
+  };
+  paint();
+}
+// Datenaktualisierungen (alle 15 s) bauen Editor und Anmeldung nur neu auf, wenn sich für sie etwas geändert hat –
+// sonst gingen Fokus, Eingabe und die laufende Vorschau jedes Mal verloren
+const unchanged = (card, B, sig) => card._b?.B === B && card._b.sig === sig && card.contains(card._b.el);
 function renderEditor(card) {
   const B = S.edit, wins = winCounts()[S.me] || 0;
-  card.innerHTML = `<h3>Deine Figur</h3>${builderHTML(B, wins, 'e')}
+  if (unchanged(card, B, wins)) return;
+  card.innerHTML = `<h3>Deine Figur</h3><div class="b-host"></div>
     <div class="row-btns"><button class="primary" id="saveAv">Speichern</button><button class="secondary" id="cancelAv">Abbrechen</button></div>`;
-  bindBuilder(card, B, wins, () => renderEditor(card));
+  mountBuilder(card.querySelector('.b-host'), B, wins, 'e');
+  card._b = { B, sig: wins, el: card.querySelector('.builder') };
   $('#saveAv').onclick = saveFigure;
-  $('#cancelAv').onclick = () => { S.edit = null; renderEntry(); updateFab(); };
+  $('#cancelAv').onclick = () => { S.edit = null; renderEntry(); updateFab(); focusCard(); };
 }
 async function saveFigure() {
   const B = S.edit; const { id, ...p } = S.players[S.me];
@@ -383,35 +536,41 @@ async function saveFigure() {
     S.edit = null; toast('Deine Figur ist gespeichert');
   } catch (e) { handleWriteError(e); }
   render();
+  if (!S.edit) focusCard();
 }
 
 /* ---------- Anmeldung ---------- */
 function renderLogin(card) {
   const L = S.login; const existing = Object.entries(S.players).sort((a, b) => a[1].name.localeCompare(b[1].name));
   const key = slug(L.name); const taken = key && S.players[key];
+  const sig = JSON.stringify([existing.map(([id, p]) => [id, p.name, p.color]), !!taken]);
+  if (unchanged(card, L, sig)) return;
   card.innerHTML = `
     <h3>Mitmachen</h3>
     ${existing.length ? `<div class="field"><span class="lbl">Schon dabei? Tippe auf deinen Namen</span>
-      <div class="players-quick">${existing.map(([id, p]) => `<button class="chip" data-login="${esc(id)}"><span class="sw" style="background:${esc(p.color)};box-shadow:0 0 0 1px var(--line)"></span>${esc(p.name)}</button>`).join('')}</div></div>` : ''}
+      <div class="players-quick">${existing.map(([id, p]) => `<button class="chip" data-login="${esc(id)}"><span class="sw" style="background:${hexColor(p.color)};box-shadow:0 0 0 1px var(--line)"></span>${esc(p.name)}</button>`).join('')}</div></div>` : ''}
     <div class="field"><label for="nameIn">${existing.length ? 'Oder neu anmelden' : 'Dein Benutzername'}</label>
       <input type="text" id="nameIn" maxlength="24" autocomplete="nickname" placeholder="z. B. Hauke" value="${esc(L.name)}">
     </div>
-    ${taken ? `<p class="summary">„${esc(S.players[key].name)}“ gibt es schon. Mit „Los geht’s“ meldest du dich als diese Person an.</p>` : `<div class="field"><span class="lbl">Bau deine Figur</span>${builderHTML(L, 0, 'n')}</div>`}
+    ${taken ? `<p class="summary">„${esc(S.players[key].name)}“ gibt es schon. Mit „Los geht’s“ meldest du dich als diese Person an.</p>` : `<div class="field"><span class="lbl">Deine Figur</span><div class="b-host"></div></div>`}
     <button class="primary" id="loginBtn" ${key ? '' : 'disabled'}>Los geht’s</button>
-    <p class="summary">Kein Passwort nötig. Dein Name wird auf diesem Gerät gemerkt. Die Figur kannst du später jederzeit umbauen.</p>`;
+    <p class="summary">Kein Passwort nötig. Dein Name wird auf diesem Gerät gemerkt.</p>`;
   card.querySelectorAll('[data-login]').forEach(b => b.onclick = () => loginAs(b.dataset.login));
-  bindBuilder(card, L, 0, () => renderLogin(card));
+  if (!taken) mountBuilder(card.querySelector('.b-host'), L, 0, 'n', true);
   const ni = $('#nameIn');
+  card._b = { B: L, sig, el: ni };
   ni.oninput = e => {
-    const was = !!(slug(L.name) && S.players[slug(L.name)]), hadKey = !!slug(L.name);
+    const was = !!(slug(L.name) && S.players[slug(L.name)]);
     L.name = e.target.value;
-    const is = !!(slug(L.name) && S.players[slug(L.name)]);
-    if (was !== is || hadKey !== !!slug(L.name)) { const pos = e.target.selectionStart; renderLogin(card); const n = $('#nameIn'); n.focus(); n.setSelectionRange(pos, pos); }
+    const k = slug(L.name), is = !!(k && S.players[k]);
+    $('#loginBtn').disabled = !k;
+    // nur neu aufbauen, wenn der Name zwischen „frei“ und „vergeben“ wechselt (Baukasten ein- oder ausblenden)
+    if (was !== is) { const pos = e.target.selectionStart; renderLogin(card); const n = $('#nameIn'); n.focus(); n.setSelectionRange(pos, pos); }
   };
   ni.onkeydown = e => { if (e.key === 'Enter') register(); };
   $('#loginBtn').onclick = register;
 }
-function loginAs(id) { S.me = id; lsSet('monatslauf.me', id); S.login.name = ''; render(); toast(`Hallo ${pname(id)}!`); }
+function loginAs(id) { S.me = id; lsSet('monatslauf.me', id); S.login = { name: '', ...builderState(startAvatar(), JERSEYS[0]) }; render(); toast(`Hallo ${pname(id)}!`); }
 async function register() {
   const name = S.login.name.trim().slice(0, 24); const key = slug(name);
   if (!key) return;

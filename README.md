@@ -21,7 +21,9 @@ Die Faktoren stehen in `js/config.js` und lassen sich dort ändern. Da Punkte im
 ## Funktionen
 
 - Anmeldung nur mit Benutzernamen, ohne Passwort
-- Figuren-Baukasten: Mensch oder eins von zehn Tieren, dazu Haut, Frisur, Haarfarbe, Bart, Kopfbedeckung, Brille, Extras, Schuhe und Trikotfarbe
+- Figuren-Baukasten: Mensch, neun Tiere oder Roboter; dazu Hautfarbe, Frisur, Haarfarbe, Bart, Brille, Hut, Trikot, Schuhe und Zubehör
+- Baukasten mit Vorschau in sechs Posen, Rückgängig, Würfeln pro Teil oder für alles; bei der Anmeldung reichen Figur und Trikotfarbe, der Rest lässt sich später umbauen
+- Gesperrte Teile lassen sich vorher anprobieren; auswählen kann man sie erst mit genug Monatssiegen
 - Monatssiege schalten Teile frei: 1 Sieg Pilotenbrille und goldene Schuhe, 2 Siege Umhang und Medaille, 3 Siege Krone
 - Relative Rennbahn: Wer führt, steht vorne, alle anderen im Verhältnis dazu
 - Die Figur zeigt die zuletzt trainierte Sportart (laufen, klettern, Hantel, Fahrrad, Yoga)
@@ -87,9 +89,9 @@ Die App hat bewusst keine Passwörter. Der öffentliche Supabase-Key steckt im C
 | `index.html` | App-Gerüst |
 | `css/app.css` | Gestaltung |
 | `js/config.js` | Supabase-Zugang und Punktefaktoren |
-| `js/figure.js` | Figuren und Baukasten |
+| `js/figure.js` | Figuren (Zeichnung und Datenmodell) |
 | `js/store.js` | Datenspeicher (Supabase oder Demo-Modus) |
-| `js/app.js` | App-Logik |
+| `js/app.js` | App-Logik und Figuren-Baukasten |
 | `sw.js`, `manifest.webmanifest`, `icons/` | PWA |
 | `supabase/schema.sql` | Datenbank-Setup |
 | `tools/make-icons.js` | Icon-Erzeugung |
