@@ -19,6 +19,7 @@
       async set(c, id, v) { (data[c] ||= {})[id] = v; save(); emit(c); },
       async add(c, v) { return this.set(c, Date.now().toString(36) + Math.random().toString(36).slice(2, 6), v); },
       async del(c, id) { delete (data[c] || {})[id]; save(); emit(c); },
+      async rpc() { throw { code: 'demo' }; },
     };
   }
 
@@ -86,6 +87,8 @@
         await api(`${c}?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
         await refresh(c);
       },
+      // Datenbank-Funktion aufrufen (z. B. push_subscribe)
+      rpc(name, args) { return api(`rpc/${name}`, { method: 'POST', body: JSON.stringify(args) }); },
     };
   }
 

@@ -64,6 +64,27 @@ Den Link öffnen oder den QR-Code unten auf der Seite scannen.
 - **Android (Chrome):** Auf „Als App installieren“ tippen, oder im Browsermenü „App installieren“ wählen.
 - **iPhone (Safari):** Unten auf „Teilen“ tippen und „Zum Home-Bildschirm“ wählen.
 
+### 4. Push-Nachrichten (optional)
+
+Die App kann Benachrichtigungen schicken: wenn dich jemand überholt, 3 Tage vor Monatsende und am letzten Tag mit deinem Platz, und als Erinnerung nach 3 bzw. 7 Tagen Pause. Wer will, bekommt zusätzlich jedes neue Training der anderen. Jede Person schaltet das in der Karte „Benachrichtigungen“ selbst an und aus. Auf iPhone und iPad geht das nur in der installierten App (ab iOS 16.4).
+
+Verschickt werden die Nachrichten von einer Supabase Edge Function. Einrichtung:
+
+1. **Schlüssel:** Für Web-Push braucht es ein Schlüsselpaar und ein Geheimnis. Der öffentliche Schlüssel steht schon in `js/config.js` (`vapidPublicKey`). Der geheime Schlüssel und das Geheimnis dürfen nie ins Repository. Neue Werte erzeugt `npx web-push generate-vapid-keys`. Dann den öffentlichen Schlüssel in `js/config.js` ersetzen, dazu ein beliebiges langes Zufallswort als Geheimnis wählen.
+2. **Datenbank:** Im **SQL Editor** den Inhalt von `supabase/push.sql` einfügen, den Platzhalter `PUSH-SECRET` durch das Geheimnis ersetzen und **Run** klicken. Das legt die Tabelle für die Geräte an, einen Trigger für neue Einträge und einen täglichen Cron-Job (16:00 UTC).
+3. **Edge Function:** Links **Edge Functions** → **Deploy a new function** → **Via Editor**. Name `push`, den Inhalt von `supabase/functions/push/index.ts` einfügen und deployen. Danach in den Einstellungen der Funktion **Verify JWT** (bzw. „Enforce JWT verification“) ausschalten. Die Funktion prüft stattdessen das Geheimnis.
+4. **Secrets:** Unter **Edge Functions → Secrets** eintragen: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `PUSH_SECRET` und `VAPID_SUBJECT` (z. B. `mailto:deine@adresse.de`).
+5. **Testen:** In der App „Benachrichtigungen aktivieren“, dann im SQL Editor die tägliche Runde von Hand auslösen:
+   ```sql
+   select net.http_post(
+     url := (select value from public.push_config where key = 'url'),
+     body := '{"type":"daily"}'::jsonb,
+     headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', (select value from public.push_config where key = 'secret')));
+   ```
+   Nachrichten kommen dabei nur, wenn es einen Anlass gibt (3 Tage vor Monatsende, letzter Tag, 3 oder 7 Tage Pause). Was passiert ist, steht unter **Edge Functions → push → Logs**.
+
+Die Punktefaktoren stehen in der Edge Function ein zweites Mal. Wer sie in `js/config.js` ändert, muss sie dort auch anpassen.
+
 ## Lokal testen
 
 ```bash
@@ -94,5 +115,6 @@ Die App hat bewusst keine Passwörter. Der öffentliche Supabase-Key steckt im C
 | `js/app.js` | App-Logik und Figuren-Baukasten |
 | `sw.js`, `manifest.webmanifest`, `icons/` | PWA |
 | `supabase/schema.sql` | Datenbank-Setup |
+| `supabase/push.sql`, `supabase/functions/push/` | Push-Nachrichten (Datenbank und Edge Function) |
 | `tools/make-icons.js` | Icon-Erzeugung |
 | `entwuerfe/` | Frühere Versionen und das Gipfelsturm-Konzept, nicht Teil der App |

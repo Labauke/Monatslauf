@@ -2,7 +2,7 @@
    App-Dateien: erst Netz, bei fehlender Verbindung aus dem Cache.
    Schriften und Bibliotheken von fremden Servern: aus dem Cache, im Hintergrund aktualisiert.
    Supabase-Anfragen laufen immer direkt übers Netz. */
-const VERSION = 'monatslauf-v7';
+const VERSION = 'monatslauf-v8';
 const SHELL = [
   './', './index.html', './css/app.css',
   './js/config.js', './js/figure.js', './js/store.js', './js/app.js',
@@ -40,4 +40,20 @@ self.addEventListener('fetch', e => {
       return cached || net;
     })
   );
+});
+
+// Push-Nachrichten (verschickt von der Supabase Edge Function „push“)
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Monatslauf', {
+    body: d.body || '', tag: d.tag, renotify: !!d.tag, icon: './icons/icon-192.png', badge: './icons/icon-192.png', data: { url: d.url || './' },
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const open = list.find(c => c.url.startsWith(self.registration.scope));
+    return open ? open.focus() : self.clients.openWindow(new URL(e.notification.data?.url || './', self.registration.scope).href);
+  }));
 });

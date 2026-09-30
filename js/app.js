@@ -147,7 +147,7 @@ function render() {
   const guest = S.loaded.players && !S.players[S.me];
   document.body.classList.toggle('guest', guest);
   if (guest) S.view = current();
-  renderWho(); renderMonth(); renderCeremony(); renderTrack(); renderEntry(); renderFeed(); renderHall(); updateFab(); }
+  renderWho(); renderMonth(); renderCeremony(); renderTrack(); renderEntry(); renderFeed(); renderHall(); renderPush(); updateFab(); }
 function updateFab() {
   const fab = $('#fab');
   fab.textContent = S.players[S.me] ? (S.edit ? 'Zur Figur' : '+ Training eintragen') : 'Mitmachen';
@@ -157,7 +157,7 @@ function updateFab() {
 function renderWho() {
   const p = S.players[S.me];
   $('#who').innerHTML = p ? `<span class="whofig">${figureSVG({ id: S.me, uid: 'w', avatar: p.avatar, color: p.color, wins: winCounts()[S.me] || 0, portrait: true, idle: true })}</span><span>${esc(p.name)}</span><button class="linkbtn" id="editAv">Figur bauen</button><button class="linkbtn" id="logout">Abmelden</button>` : '';
-  const lo = $('#logout'); if (lo) lo.onclick = () => { S.me = null; S.edit = null; lsSet('monatslauf.me', null); render(); };
+  const lo = $('#logout'); if (lo) lo.onclick = () => { pushOff(true); S.me = null; S.edit = null; lsSet('monatslauf.me', null); render(); };
   const ea = $('#editAv'); if (ea) ea.onclick = () => {
     S.edit = builderState(normalize(p.avatar, S.me), hexColor(p.color, JERSEYS[0]));
     renderEntry(); updateFab();
@@ -601,7 +601,7 @@ function renderLogin(card) {
   ni.onkeydown = e => { if (e.key === 'Enter') register(); };
   $('#loginBtn').onclick = register;
 }
-function loginAs(id) { S.me = id; lsSet('monatslauf.me', id); S.login = { name: '', ...builderState(startAvatar(), JERSEYS[0]) }; render(); toast(`Hallo ${pname(id)}!`); }
+function loginAs(id) { S.me = id; lsSet('monatslauf.me', id); if (P.sub) pushSave(P.sub).catch(() => {}); S.login = { name: '', ...builderState(startAvatar(), JERSEYS[0]) }; render(); toast(`Hallo ${pname(id)}!`); }
 async function register() {
   const name = S.login.name.trim().slice(0, 24); const key = slug(name);
   if (!key) return;
@@ -685,6 +685,82 @@ function iosInstallHelp() {
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 /* ---------- Start ---------- */
+/* ---------- Push-Nachrichten ---------- */
+const PUSH_KINDS = [['overtake', 'Wenn dich jemand überholt', true], ['deadline', 'Kurz vor Monatsende: dein Platz', true],
+  ['reminder', 'Erinnerung nach 3 Tagen Pause', true], ['entries', 'Jedes neue Training der anderen', false]];
+const P = { sub: null, busy: false, ready: false };
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && location.protocol.startsWith('http');
+function pushPrefs() {
+  let saved = {}; try { saved = JSON.parse(lsGet('monatslauf.push')) || {}; } catch {}
+  return { ...Object.fromEntries(PUSH_KINDS.map(([k, , d]) => [k, d])), ...saved };
+}
+const b64u = s => { const b = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+async function pushSave(sub, prefs = pushPrefs()) {
+  const j = sub.toJSON();
+  await S.store.rpc('push_subscribe', { p_endpoint: j.endpoint, p_player: S.me, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_prefs: prefs });
+  lsSet('monatslauf.push', JSON.stringify(prefs));
+}
+async function pushOn() {
+  if (P.busy) return;
+  P.busy = true; renderPush();
+  let sub = null;
+  try {
+    if (await Notification.requestPermission() !== 'granted') throw { code: 'denied' };
+    const reg = await navigator.serviceWorker.ready;
+    sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(CFG.vapidPublicKey) });
+    await pushSave(sub);
+    P.sub = sub;
+    toast('Benachrichtigungen sind an');
+  } catch (e) {
+    if (e?.code !== 'denied') {
+      if (sub) sub.unsubscribe().catch(() => {});
+      toast(e?.code === 'offline' ? 'Keine Internetverbindung. Versuch es gleich noch mal.' : 'Benachrichtigungen konnten nicht eingerichtet werden. Ist Supabase dafür vorbereitet (README)?');
+    }
+  }
+  P.busy = false; renderPush();
+}
+async function pushOff(quiet) {
+  const sub = P.sub; if (!sub) return;
+  P.sub = null; renderPush();
+  try { await S.store.rpc('push_unsubscribe', { p_endpoint: sub.endpoint }); } catch {}
+  await sub.unsubscribe().catch(() => {});
+  if (!quiet) toast('Benachrichtigungen auf diesem Gerät sind aus');
+}
+function renderPush() {
+  const card = $('#pushCard'), box = $('#push');
+  card.hidden = !S.players[S.me];
+  if (card.hidden) return;
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (!S.store?.shared) box.innerHTML = '<p class="summary">Im Demo-Modus gibt es keine Benachrichtigungen.</p>';
+  else if (!CFG.vapidPublicKey) box.innerHTML = '<p class="summary">Benachrichtigungen sind noch nicht eingerichtet (README).</p>';
+  else if (!pushSupported()) box.innerHTML = IOS && !standalone
+    ? '<p class="summary">Auf iPhone und iPad gibt es Benachrichtigungen nur in der installierten App (ab iOS 16.4). Installiere den Monatslauf und öffne ihn vom Home-Bildschirm.</p><button class="secondary" id="pushIos">So installierst du die App</button>'
+    : '<p class="summary">Dieser Browser kann keine Benachrichtigungen empfangen.</p>';
+  else if (Notification.permission === 'denied') box.innerHTML = '<p class="summary">Benachrichtigungen sind für diese Seite blockiert. Du kannst sie in den Einstellungen des Browsers bzw. der App wieder erlauben.</p>';
+  else if (!P.ready) box.innerHTML = '<p class="summary">Lade …</p>';
+  else if (!P.sub) box.innerHTML = `<p class="summary">Lass dich benachrichtigen, wenn dich jemand überholt, kurz vor Monatsende und wenn deine Figur einschläft.</p>
+    <button class="primary" id="pushOn" ${P.busy ? 'disabled' : ''}>Benachrichtigungen aktivieren</button>`;
+  else {
+    const prefs = pushPrefs();
+    box.innerHTML = `<div class="push-list">${PUSH_KINDS.map(([k, l]) => `<label class="toggle"><input type="checkbox" data-push="${k}" ${prefs[k] ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>
+      <button class="linkbtn" id="pushOff">Auf diesem Gerät ausschalten</button>`;
+  }
+  $('#pushOn')?.addEventListener('click', pushOn);
+  $('#pushOff')?.addEventListener('click', () => pushOff());
+  $('#pushIos')?.addEventListener('click', iosInstallHelp);
+  box.querySelectorAll('[data-push]').forEach(c => c.onchange = async () => {
+    const prefs = { ...pushPrefs(), [c.dataset.push]: c.checked };
+    try { await pushSave(P.sub, prefs); } catch (e) { c.checked = !c.checked; handleWriteError(e); }
+  });
+}
+function initPush() {
+  if (!pushSupported() || !S.store?.shared) { P.ready = true; return renderPush(); }
+  navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => {
+    P.sub = sub; P.ready = true; renderPush();
+    if (sub && S.players[S.me]) pushSave(sub).catch(() => {}); // Gerät bleibt der angemeldeten Person zugeordnet
+  }).catch(() => { P.ready = true; renderPush(); });
+}
 function start(store) {
   S.store = store;
   const banner = $('#banner');
@@ -702,3 +778,4 @@ function start(store) {
 }
 render();
 start(createStore(CFG));
+initPush();

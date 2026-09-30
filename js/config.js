@@ -5,6 +5,9 @@ window.MONATSLAUF_CONFIG = {
   supabaseUrl: 'https://mpmbzbbqrslniszxjrih.supabase.co',   // z. B. 'https://abcdefghijkl.supabase.co'
   supabaseKey: 'sb_publishable_16yrYWjLu-aXgBWdYpNBrw_WdKT--V5',   // der öffentliche "anon"- bzw. "publishable"-Key, niemals den "service_role"-Key
 
+  // Öffentlicher Schlüssel für Push-Nachrichten (der geheime Teil gehört nur in die Supabase-Secrets, siehe README)
+  vapidPublicKey: 'BJa1zy92QnugnlC848hvFVJJ_G2WyDw9Te31bF18NoQGHqRu_demOwlSmKstl9v6v0N4cqdmQoky59VA9i6bvOY',
+
   // Punkte pro Trainingsminute. Änderungen gelten sofort, auch rückwirkend für den laufenden Monat.
   factors: {
     laufen: 4,     // Joggen
