@@ -2,7 +2,7 @@
    App-Dateien: erst Netz, bei fehlender Verbindung aus dem Cache.
    Schriften und Bibliotheken von fremden Servern: aus dem Cache, im Hintergrund aktualisiert.
    Supabase-Anfragen laufen immer direkt übers Netz. */
-const VERSION = 'monatslauf-v2';
+const VERSION = 'monatslauf-v3';
 const SHELL = [
   './', './index.html', './css/app.css',
   './js/config.js', './js/figure.js', './js/store.js', './js/app.js',

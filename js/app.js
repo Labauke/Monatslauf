@@ -306,15 +306,33 @@ function renderEntry() {
     $('#sum').innerHTML = summary();
     $('#saveEntry').disabled = !(f.sport && f.minutes > 0);
   };
-  $('#saveEntry').onclick = saveEntry;
+  $('#saveEntry').onclick = confirmEntry;
+}
+// Vor dem Speichern nachfragen, damit nichts aus Versehen (oder doppelt) eingetragen wird
+function confirmEntry() {
+  const f = S.form; if (!f.sport || !(f.minutes > 0) || S.busy) return;
+  const dlg = $('#confirmDlg');
+  const twin = S.entries.some(e => e.player === S.me && e.date === f.date && e.sport === f.sport && e.minutes === f.minutes);
+  dlg.innerHTML = `<form method="dialog">
+    <h3 id="dlgTitle">Training eintragen?</h3>
+    <p class="dlg-sum"><span>${fmtDate(f.date)}</span><b>${fmtMin(f.minutes)} ${SPORT[f.sport].label}</b><span class="dlg-pts">+${pointsOf(f.minutes, f.sport).toLocaleString('de-DE')} Punkte</span></p>
+    ${twin ? '<p class="dlg-warn">Genau dieses Training hast du an diesem Tag schon eingetragen. Wirklich noch einmal?</p>' : ''}
+    <div class="row-btns"><button class="primary" value="ok" id="dlgOk">${twin ? 'Trotzdem eintragen' : 'Ja, eintragen'}</button><button class="secondary" value="cancel">Zurück</button></div>
+  </form>`;
+  dlg.onclose = () => { if (dlg.returnValue === 'ok') saveEntry(); };
+  dlg.returnValue = '';
+  dlg.showModal();
+  (twin ? dlg.querySelector('[value=cancel]') : $('#dlgOk')).focus();
 }
 async function saveEntry() {
   const f = S.form; if (!f.sport || S.busy) return;
+  const entry = { player: S.me, date: f.date, minutes: f.minutes, sport: f.sport, created: Date.now() };
   S.busy = true; renderEntry();
   try {
     S.view = current();
-    await S.store.add('entries', { player: S.me, date: f.date, minutes: f.minutes, sport: f.sport, created: Date.now() });
-    toast(`${fmtMin(f.minutes)} ${SPORT[f.sport].label} eingetragen: +${pointsOf(f.minutes, f.sport)} Punkte`);
+    await S.store.add('entries', entry);
+    S.form = { date: today(), minutes: 60, sport: null, custom: false }; // zurücksetzen, damit ein zweiter Klick nichts doppelt einträgt
+    toast(`${fmtMin(entry.minutes)} ${SPORT[entry.sport].label} eingetragen: +${pointsOf(entry.minutes, entry.sport)} Punkte`);
     if (MOBILE.matches) $('#stadium').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
     confetti();
   } catch (e) { handleWriteError(e); }

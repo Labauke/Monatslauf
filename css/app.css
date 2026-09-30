@@ -424,3 +424,15 @@ input[type=number]{width:90px}
   .invite{grid-template-columns:1fr;justify-items:start}
   .invite-actions .secondary{width:100%}
 }
+
+/* ---------- Bestätigungsdialog ---------- */
+.dlg{border:0;border-radius:18px;padding:22px;width:min(420px,calc(100% - 32px));background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.dlg::backdrop{background:rgba(11,18,32,.55)}
+.dlg form{display:flex;flex-direction:column;gap:14px}
+.dlg h3{font-family:var(--display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.02em;margin:0}
+.dlg-sum{display:flex;flex-direction:column;gap:2px;margin:0;padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.dlg-sum span{color:var(--muted);font-weight:600}
+.dlg-sum b{font-size:18px}
+.dlg-sum .dlg-pts{font-family:var(--display);font-size:24px;font-weight:800;color:var(--accent)}
+.dlg-warn{margin:0;padding:10px 12px;border-radius:10px;background:var(--gold);color:#1a1405;font-weight:600;font-size:14px}
+.dlg .row-btns button{flex:1 1 auto}
