@@ -151,7 +151,8 @@ function render() {
 function updateFab() {
   const fab = $('#fab');
   fab.textContent = S.players[S.me] ? (S.edit ? 'Zur Figur' : '+ Training eintragen') : 'Mitmachen';
-  fab.hidden = entryInView || S.readOnly || !S.loaded.players;
+  // Angemeldet öffnet der Knopf direkt den Eintragen-Dialog und bleibt deshalb immer sichtbar
+  fab.hidden = S.readOnly || !S.loaded.players || (entryInView && !(S.players[S.me] && !S.edit));
 }
 function renderWho() {
   const p = S.players[S.me];
@@ -265,25 +266,44 @@ function renderTrack() {
 }
 
 /* ---------- Training eintragen ---------- */
+const newForm = () => ({ date: today(), minutes: 60, sport: null, custom: false });
 function renderEntry() {
   const card = $('#entryCard');
   if (!S.players[S.me]) return renderLogin(card);
   if (S.edit) return renderEditor(card);
   if (S.readOnly) { card.innerHTML = `<h3>Training eintragen</h3><p class="summary">Einträge können gerade nicht gespeichert werden. Prüfe die Supabase-Einstellungen in der README.</p>`; return; }
-  const f = S.form;
+  const t = totals(current())[S.me];
+  card.innerHTML = `
+    <h3>Training eintragen</h3>
+    <p class="summary">${t ? `Diesen Monat: <b>${fmtPts(t.total)}</b> aus ${t.count} ${t.count === 1 ? 'Training' : 'Trainings'} (${fmtMin(t.minutes)}).` : 'Diesen Monat hast du noch nichts eingetragen.'}</p>
+    <button class="primary" id="openEntry" ${S.busy ? 'disabled' : ''}>+ Training eintragen</button>
+    <p class="factors">Punkte pro Minute: ${SPORTS.map(s => `<span><i style="background:${s.color}"></i>${s.label} ${fmtFactor(s.factor)}</span>`).join('')}</p>`;
+  $('#openEntry').onclick = openEntry;
+}
+// Eintragen läuft in einem eigenen Dialog: auswählen, dann ein Knopf, der gleich das Ergebnis nennt
+function openEntry() {
+  if (S.busy || !S.players[S.me] || S.readOnly) return;
+  S.form = newForm();
+  const dlg = $('#entryDlg');
+  renderEntryForm();
+  dlg.onclick = e => { if (e.target === dlg) dlg.close(); }; // Tippen neben den Dialog schließt ihn
+  dlg.showModal();
+  dlg.querySelector('[data-sport]')?.focus();
+}
+const saveLabel = f => `${fmtMin(f.minutes)} ${SPORT[f.sport].label} eintragen<small>+${pointsOf(f.minutes, f.sport).toLocaleString('de-DE')} Punkte · ${fmtDate(f.date)}</small>`;
+function renderEntryForm(refocus) {
+  const dlg = $('#entryDlg'), f = S.form;
   const minDate = `${current()}-01`;
   const dateChips = [['Heute', today()], ['Gestern', daysAgo(1)], ['Vorgestern', daysAgo(2)]].filter(([, d]) => d >= minDate);
   if (f.date < minDate) f.date = today();
   const quickDate = dateChips.some(([, d]) => d === f.date);
-  const summary = () => f.sport
-    ? `<span>${fmtDate(f.date)} · ${fmtMin(f.minutes)} ${SPORT[f.sport].label} =</span><b>${pointsOf(f.minutes, f.sport).toLocaleString('de-DE')}</b><span>Punkte</span>`
-    : '<span>Wähle noch eine Sportart.</span>';
-  card.innerHTML = `
-    <h3>Training eintragen</h3>
-    <div class="field"><span class="lbl">Tag</span>
+  const ok = f.sport && f.minutes > 0;
+  const twin = ok && S.entries.some(e => e.player === S.me && e.date === f.date && e.sport === f.sport && e.minutes === f.minutes);
+  dlg.innerHTML = `
+    <div class="dlg-head"><h3 id="entryTitle">Training eintragen</h3><button class="dlg-x" id="entryClose" aria-label="Schließen">×</button></div>
+    <div class="field"><span class="lbl">Sportart</span>
       <div class="chips">
-        ${dateChips.map(([l, d]) => `<button class="chip" data-date="${d}" aria-pressed="${f.date === d}">${l}</button>`).join('')}
-        <input type="date" id="dateIn" aria-label="Anderes Datum" min="${minDate}" max="${today()}" value="${f.date}" ${quickDate ? '' : 'style="border-color:var(--ink)"'}>
+        ${SPORTS.map(s => `<button class="chip" data-sport="${s.id}" aria-pressed="${f.sport === s.id}"><span class="sw" style="background:${s.color}"></span>${s.label}<span class="fac">${fmtFactor(s.factor)}</span></button>`).join('')}
       </div>
     </div>
     <div class="field"><span class="lbl">Dauer</span>
@@ -292,53 +312,41 @@ function renderEntry() {
         <input type="number" id="minIn" min="1" max="600" inputmode="numeric" placeholder="andere Minuten" aria-label="Andere Dauer in Minuten" value="${f.custom ? f.minutes : ''}">
       </div>
     </div>
-    <div class="field"><span class="lbl">Sportart</span>
+    <div class="field"><span class="lbl">Tag</span>
       <div class="chips">
-        ${SPORTS.map(s => `<button class="chip" data-sport="${s.id}" aria-pressed="${f.sport === s.id}"><span class="sw" style="background:${s.color}"></span>${s.label}<span class="fac">${fmtFactor(s.factor)}</span></button>`).join('')}
+        ${dateChips.map(([l, d]) => `<button class="chip" data-date="${d}" aria-pressed="${f.date === d}">${l}</button>`).join('')}
+        <input type="date" id="dateIn" aria-label="Anderes Datum" min="${minDate}" max="${today()}" value="${f.date}" ${quickDate ? '' : 'style="border-color:var(--ink)"'}>
       </div>
     </div>
-    <p class="points-preview" id="sum">${summary()}</p>
-    <button class="primary" id="saveEntry" ${f.sport && f.minutes > 0 && !S.busy ? '' : 'disabled'}>Eintragen</button>
-    <p class="factors">Punkte pro Minute: ${SPORTS.map(s => `<span><i style="background:${s.color}"></i>${s.label} ${fmtFactor(s.factor)}</span>`).join('')}</p>`;
-  card.querySelectorAll('[data-date]').forEach(b => b.onclick = () => { f.date = b.dataset.date; renderEntry(); });
-  card.querySelectorAll('[data-min]').forEach(b => b.onclick = () => { f.minutes = +b.dataset.min; f.custom = false; renderEntry(); });
-  card.querySelectorAll('[data-sport]').forEach(b => b.onclick = () => { f.sport = b.dataset.sport; renderEntry(); });
-  $('#dateIn').onchange = e => { if (e.target.value && e.target.value >= minDate && e.target.value <= today()) f.date = e.target.value; renderEntry(); };
+    ${twin ? '<p class="dlg-warn">Genau dieses Training hast du an diesem Tag schon eingetragen. Nur eintragen, wenn du es wirklich zweimal gemacht hast.</p>' : ''}
+    <button class="primary dlg-save" id="saveEntry" ${ok ? '' : 'disabled'}>${ok ? saveLabel(f) : 'Wähle noch eine Sportart'}</button>`;
+  const pick = (sel, fn) => dlg.querySelectorAll(`[${sel}]`).forEach(b => b.onclick = () => { fn(b.getAttribute(sel)); renderEntryForm(`[${sel}="${b.getAttribute(sel)}"]`); });
+  pick('data-sport', v => { f.sport = v; });
+  pick('data-min', v => { f.minutes = +v; f.custom = false; });
+  pick('data-date', v => { f.date = v; });
+  $('#dateIn').onchange = e => { if (e.target.value && e.target.value >= minDate && e.target.value <= today()) f.date = e.target.value; renderEntryForm('#dateIn'); };
+  // Eigene Minuten: beim Tippen nur Knopf und Auswahl anpassen, damit das Feld den Fokus behält
   $('#minIn').oninput = e => {
     const v = parseInt(e.target.value, 10);
     if (v > 0 && v <= 600) { f.minutes = v; f.custom = true; }
-    card.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(!f.custom && f.minutes === +b.dataset.min)));
-    $('#sum').innerHTML = summary();
-    $('#saveEntry').disabled = !(f.sport && f.minutes > 0);
+    dlg.querySelectorAll('[data-min]').forEach(b => b.setAttribute('aria-pressed', String(!f.custom && f.minutes === +b.dataset.min)));
+    const btn = $('#saveEntry'); btn.disabled = !(f.sport && f.minutes > 0); if (!btn.disabled) btn.innerHTML = saveLabel(f);
   };
-  $('#saveEntry').onclick = confirmEntry;
-}
-// Vor dem Speichern nachfragen, damit nichts aus Versehen (oder doppelt) eingetragen wird
-function confirmEntry() {
-  const f = S.form; if (!f.sport || !(f.minutes > 0) || S.busy) return;
-  const dlg = $('#confirmDlg');
-  const twin = S.entries.some(e => e.player === S.me && e.date === f.date && e.sport === f.sport && e.minutes === f.minutes);
-  dlg.innerHTML = `<form method="dialog">
-    <h3 id="dlgTitle">Training eintragen?</h3>
-    <p class="dlg-sum"><span>${fmtDate(f.date)}</span><b>${fmtMin(f.minutes)} ${SPORT[f.sport].label}</b><span class="dlg-pts">+${pointsOf(f.minutes, f.sport).toLocaleString('de-DE')} Punkte</span></p>
-    ${twin ? '<p class="dlg-warn">Genau dieses Training hast du an diesem Tag schon eingetragen. Wirklich noch einmal?</p>' : ''}
-    <div class="row-btns"><button class="primary" value="ok" id="dlgOk">${twin ? 'Trotzdem eintragen' : 'Ja, eintragen'}</button><button class="secondary" value="cancel">Zurück</button></div>
-  </form>`;
-  dlg.onclose = () => { if (dlg.returnValue === 'ok') saveEntry(); };
-  dlg.returnValue = '';
-  dlg.showModal();
-  (twin ? dlg.querySelector('[value=cancel]') : $('#dlgOk')).focus();
+  $('#minIn').onchange = () => renderEntryForm('#minIn');
+  $('#entryClose').onclick = () => dlg.close();
+  $('#saveEntry').onclick = () => { dlg.close(); saveEntry(); };
+  if (refocus) dlg.querySelector(refocus)?.focus({ preventScroll: true });
 }
 async function saveEntry() {
-  const f = S.form; if (!f.sport || S.busy) return;
+  const f = S.form; if (!f.sport || !(f.minutes > 0) || S.busy) return;
   const entry = { player: S.me, date: f.date, minutes: f.minutes, sport: f.sport, created: Date.now() };
+  S.form = newForm(); // sofort zurücksetzen: ein zweiter Klick kann nichts doppelt eintragen
   S.busy = true; renderEntry();
   try {
     S.view = current();
     await S.store.add('entries', entry);
-    S.form = { date: today(), minutes: 60, sport: null, custom: false }; // zurücksetzen, damit ein zweiter Klick nichts doppelt einträgt
     toast(`${fmtMin(entry.minutes)} ${SPORT[entry.sport].label} eingetragen: +${pointsOf(entry.minutes, entry.sport)} Punkte`);
-    if (MOBILE.matches) $('#stadium').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+    $('#stadium').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
     confetti();
   } catch (e) { handleWriteError(e); }
   S.busy = false; render();
@@ -630,7 +638,7 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = fal
 
 $('#prevM').onclick = () => { S.view = shiftMonth(S.view, -1); render(); };
 $('#nextM').onclick = () => { if (S.view < current()) { S.view = shiftMonth(S.view, 1); render(); } };
-$('#fab').onclick = () => $('#entryCard').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+$('#fab').onclick = () => S.players[S.me] && !S.edit ? openEntry() : $('#entryCard').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
 if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { entryInView = e.isIntersecting; updateFab(); }, { threshold: .15 }).observe($('#entryCard'));
 else entryInView = false;
 

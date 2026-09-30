@@ -428,12 +428,17 @@ input[type=number]{width:90px}
 /* ---------- Bestätigungsdialog ---------- */
 .dlg{border:0;border-radius:18px;padding:22px;width:min(420px,calc(100% - 32px));background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .dlg::backdrop{background:rgba(11,18,32,.55)}
-.dlg form{display:flex;flex-direction:column;gap:14px}
+.dlg form,.dlg.sheet[open]{display:flex;flex-direction:column;gap:14px}
+.dlg{max-height:calc(100dvh - 32px);overflow:auto}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dlg-x{background:none;border:0;font-size:30px;line-height:1;width:44px;height:44px;margin:-10px -10px -10px 0;border-radius:10px;color:var(--muted)}
+.dlg.sheet{width:min(560px,calc(100% - 32px))}
+.dlg-save{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2}
+.dlg-save small{font-weight:600;font-size:13px;opacity:.85}
+@media (max-width:760px){
+  .dlg.sheet{width:100%;max-width:100%;margin:auto 0 0;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:92dvh}
+}
 .dlg h3{font-family:var(--display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.02em;margin:0}
-.dlg-sum{display:flex;flex-direction:column;gap:2px;margin:0;padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
-.dlg-sum span{color:var(--muted);font-weight:600}
-.dlg-sum b{font-size:18px}
-.dlg-sum .dlg-pts{font-family:var(--display);font-size:24px;font-weight:800;color:var(--accent)}
 .dlg-warn{margin:0;padding:10px 12px;border-radius:10px;background:var(--gold);color:#1a1405;font-weight:600;font-size:14px}
 .dlg .row-btns button{flex:1 1 auto}
 
