@@ -260,9 +260,9 @@ function renderTrack() {
   }
   const used = SPORTS.filter(s => rows.some(r => r.segs.some(g => g.sport === s.id)));
   $('#legendRow').innerHTML = rows.length ? `<span>Spuren:</span>${used.map(s => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('')}` : '';
+  // Unter der Legende nur Hinweise für Laden und Beispielbahnen
   $('#stadiumNote').textContent = !S.loaded.players ? 'Lade Rennbahn …'
-    : example ? 'So sieht es aus, sobald ihr loslegt. Meldet euch an, baut eure Figur und tragt euer erstes Training ein.'
-    : 'Wer die meisten Punkte hat, läuft vorne mit Flammen an den Schuhen, alle anderen im Verhältnis dazu. Das Schlusslicht sitzt auf dem Sofa. Nach 3 Tagen Pause schläft die Figur ein, nach einer Woche setzt sie Spinnweben an.';
+    : example ? 'So sieht es aus, sobald ihr loslegt. Meldet euch an, baut eure Figur und tragt euer erstes Training ein.' : '';
 }
 
 /* ---------- Training eintragen ---------- */

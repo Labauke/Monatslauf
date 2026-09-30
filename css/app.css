@@ -79,6 +79,7 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .legend-row{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 4px 0;font-size:13px;opacity:.9}
 .legend-row span{display:inline-flex;align-items:center;gap:6px}
 .legend-row i{display:inline-block;width:10px;height:10px;border-radius:50%}
+.stadium-note:empty{display:none}
 .stadium-note{margin:8px 4px 0;font-size:13px;opacity:.85}
 
 /* overtake flash */
