@@ -156,7 +156,8 @@ function updateFab() {
 }
 function renderWho() {
   const p = S.players[S.me];
-  $('#who').innerHTML = p ? `<span class="whofig">${figureSVG({ id: S.me, uid: 'w', avatar: p.avatar, color: p.color, wins: winCounts()[S.me] || 0, portrait: true, idle: true })}</span><span>${esc(p.name)}</span><button class="linkbtn" id="editAv">Figur bauen</button><button class="linkbtn" id="logout">Abmelden</button>` : '';
+  $('#who').innerHTML = p ? `<span class="whofig">${figureSVG({ id: S.me, uid: 'w', avatar: p.avatar, color: p.color, wins: winCounts()[S.me] || 0, portrait: true, idle: true })}</span><span>${esc(p.name)}</span><button class="linkbtn" id="editAv">Figur bauen</button><button class="linkbtn" id="logout">Abmelden</button><button class="bell" id="bellBtn" aria-label="Benachrichtigungen"></button>` : '';
+  if (p) { $('#bellBtn').onclick = openPushDlg; renderBell(); }
   const lo = $('#logout'); if (lo) lo.onclick = () => { pushOff(true); S.me = null; S.edit = null; lsSet('monatslauf.me', null); render(); };
   const ea = $('#editAv'); if (ea) ea.onclick = () => {
     S.edit = builderState(normalize(p.avatar, S.me), hexColor(p.color, JERSEYS[0]));
@@ -348,6 +349,7 @@ async function saveEntry() {
     toast(`${fmtMin(entry.minutes)} ${SPORT[entry.sport].label} eingetragen: +${pointsOf(entry.minutes, entry.sport)} Punkte`);
     $('#stadium').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
     confetti();
+    setTimeout(askPushOnce, 2500);
   } catch (e) { handleWriteError(e); }
   S.busy = false; render();
 }
@@ -686,14 +688,17 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) naviga
 
 /* ---------- Start ---------- */
 /* ---------- Push-Nachrichten ---------- */
-const PUSH_KINDS = [['overtake', 'Wenn dich jemand überholt', true], ['deadline', 'Kurz vor Monatsende: dein Platz', true],
-  ['reminder', 'Erinnerung nach 3 Tagen Pause', true], ['entries', 'Jedes neue Training der anderen', false]];
+const PUSH_KINDS = [
+  ['overtake', 'Überholt', 'Wenn jemand an dir vorbeizieht.', true],
+  ['deadline', 'Monatsende', 'Dein Platz 3 Tage vorher und am letzten Tag.', true],
+  ['reminder', 'Erinnerung', 'Wenn du 3 oder 7 Tage nichts eingetragen hast.', true],
+  ['entries', 'Neue Trainings', 'Jedes Training der anderen.', false]];
 const P = { sub: null, busy: false, ready: false };
 const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && location.protocol.startsWith('http');
 function pushPrefs() {
   let saved = {}; try { saved = JSON.parse(lsGet('monatslauf.push')) || {}; } catch {}
-  return { ...Object.fromEntries(PUSH_KINDS.map(([k, , d]) => [k, d])), ...saved };
+  return { ...Object.fromEntries(PUSH_KINDS.map(([k, , , d]) => [k, d])), ...saved };
 }
 const b64u = s => { const b = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
 async function pushSave(sub, prefs = pushPrefs()) {
@@ -727,32 +732,61 @@ async function pushOff(quiet) {
   await sub.unsubscribe().catch(() => {});
   if (!quiet) toast('Benachrichtigungen auf diesem Gerät sind aus');
 }
-function renderPush() {
-  const card = $('#pushCard'), box = $('#push');
-  card.hidden = !S.players[S.me];
-  if (card.hidden) return;
+const bellSVG = on => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v3.5L4.5 16h15L18 12.5V9a6 6 0 0 0-6-6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>${on ? '' : '<path d="M4 4 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}</svg>`;
+function renderBell() {
+  const b = $('#bellBtn'); if (!b) return;
+  b.innerHTML = bellSVG(!!P.sub);
+  b.title = P.sub ? 'Benachrichtigungen: an' : 'Benachrichtigungen: aus';
+  b.setAttribute('aria-label', b.title);
+}
+// Warum Benachrichtigungen auf diesem Gerät nicht gehen (oder null, wenn sie gehen)
+function pushBlocker() {
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  if (!S.store?.shared) box.innerHTML = '<p class="summary">Im Demo-Modus gibt es keine Benachrichtigungen.</p>';
-  else if (!CFG.vapidPublicKey) box.innerHTML = '<p class="summary">Benachrichtigungen sind noch nicht eingerichtet (README).</p>';
-  else if (!pushSupported()) box.innerHTML = IOS && !standalone
+  if (!S.store?.shared) return '<p class="summary">Im Demo-Modus gibt es keine Benachrichtigungen.</p>';
+  if (!CFG.vapidPublicKey) return '<p class="summary">Benachrichtigungen sind noch nicht eingerichtet (README).</p>';
+  if (!pushSupported()) return IOS && !standalone
     ? '<p class="summary">Auf iPhone und iPad gibt es Benachrichtigungen nur in der installierten App (ab iOS 16.4). Installiere den Monatslauf und öffne ihn vom Home-Bildschirm.</p><button class="secondary" id="pushIos">So installierst du die App</button>'
     : '<p class="summary">Dieser Browser kann keine Benachrichtigungen empfangen.</p>';
-  else if (Notification.permission === 'denied') box.innerHTML = '<p class="summary">Benachrichtigungen sind für diese Seite blockiert. Du kannst sie in den Einstellungen des Browsers bzw. der App wieder erlauben.</p>';
-  else if (!P.ready) box.innerHTML = '<p class="summary">Lade …</p>';
-  else if (!P.sub) box.innerHTML = `<p class="summary">Lass dich benachrichtigen, wenn dich jemand überholt, kurz vor Monatsende und wenn deine Figur einschläft.</p>
-    <button class="primary" id="pushOn" ${P.busy ? 'disabled' : ''}>Benachrichtigungen aktivieren</button>`;
-  else {
-    const prefs = pushPrefs();
-    box.innerHTML = `<div class="push-list">${PUSH_KINDS.map(([k, l]) => `<label class="toggle"><input type="checkbox" data-push="${k}" ${prefs[k] ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>
-      <button class="linkbtn" id="pushOff">Auf diesem Gerät ausschalten</button>`;
-  }
-  $('#pushOn')?.addEventListener('click', pushOn);
-  $('#pushOff')?.addEventListener('click', () => pushOff());
+  if (Notification.permission === 'denied') return '<p class="summary">Benachrichtigungen sind für diese Seite blockiert. Du kannst sie in den Einstellungen des Browsers bzw. der App wieder erlauben.</p>';
+  return null;
+}
+function openPushDlg() {
+  const dlg = $('#pushDlg');
+  dlg.onclick = e => { if (e.target === dlg) dlg.close(); };
+  renderPush(true);
+  dlg.showModal();
+}
+function renderPush(force) {
+  renderBell();
+  const dlg = $('#pushDlg'); if (!dlg.open && !force) return;
+  const block = pushBlocker(), on = !!P.sub, prefs = pushPrefs();
+  const sw = (id, attrs) => `<input type="checkbox" role="switch" class="switch" id="${id}" ${attrs}>`;
+  dlg.innerHTML = `
+    <div class="dlg-head"><h3 id="pushTitle">Benachrichtigungen</h3><button class="dlg-x" id="pushClose" aria-label="Schließen">×</button></div>
+    ${block || `<label class="sw-row main"><span><b>Benachrichtigungen auf diesem Gerät</b><small>${on ? 'An. Du bekommst die Nachrichten, die unten eingeschaltet sind.' : 'Aus.'}</small></span>
+      ${sw('pushMain', `${on ? 'checked' : ''} ${P.busy || !P.ready ? 'disabled' : ''}`)}</label>`}
+    <div class="sw-list${on && !block ? '' : ' off'}">
+      ${PUSH_KINDS.map(([k, t, d]) => `<label class="sw-row"><span><b>${t}</b><small>${d}</small></span>${sw('push-' + k, `data-push="${k}" ${prefs[k] ? 'checked' : ''} ${on && !block ? '' : 'disabled'}`)}</label>`).join('')}
+    </div>
+    <p class="summary">Die Einstellungen gelten nur für dieses Gerät.</p>`;
+  $('#pushClose').onclick = () => dlg.close();
   $('#pushIos')?.addEventListener('click', iosInstallHelp);
-  box.querySelectorAll('[data-push]').forEach(c => c.onchange = async () => {
-    const prefs = { ...pushPrefs(), [c.dataset.push]: c.checked };
-    try { await pushSave(P.sub, prefs); } catch (e) { c.checked = !c.checked; handleWriteError(e); }
+  const main = $('#pushMain');
+  if (main) main.onchange = () => main.checked ? pushOn() : pushOff();
+  dlg.querySelectorAll('[data-push]').forEach(c => c.onchange = async () => {
+    const next = { ...pushPrefs(), [c.dataset.push]: c.checked };
+    try { await pushSave(P.sub, next); } catch (e) { c.checked = !c.checked; handleWriteError(e); }
   });
+}
+// Einmaliger Hinweis nach dem ersten eigenen Training
+function askPushOnce() {
+  if (lsGet('monatslauf.pushAsked') || P.sub || pushBlocker() || Notification.permission !== 'default') return;
+  lsSet('monatslauf.pushAsked', '1');
+  const box = $('#pushAsk');
+  box.innerHTML = `<p>Willst du benachrichtigt werden, wenn dich jemand überholt?</p><div class="row-btns"><button class="primary" id="askYes">Aktivieren</button><button class="secondary" id="askNo">Nein danke</button></div>`;
+  box.hidden = false;
+  $('#askNo').onclick = () => { box.hidden = true; };
+  $('#askYes').onclick = async () => { box.hidden = true; await pushOn(); };
 }
 function initPush() {
   if (!pushSupported() || !S.store?.shared) { P.ready = true; return renderPush(); }
