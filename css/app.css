@@ -436,3 +436,10 @@ input[type=number]{width:90px}
 .dlg-sum .dlg-pts{font-family:var(--display);font-size:24px;font-weight:800;color:var(--accent)}
 .dlg-warn{margin:0;padding:10px 12px;border-radius:10px;background:var(--gold);color:#1a1405;font-weight:600;font-size:14px}
 .dlg .row-btns button{flex:1 1 auto}
+
+/* ---------- Ohne Anmeldung: nur aktueller Stand und Mitmachen ---------- */
+.guest .side > .card:not(#inviteCard),.guest .monthnav .iconbtn{display:none}
+.guest .monthnav{width:auto}
+.guest .grid{grid-template-columns:minmax(0,640px);justify-content:center}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.steps li{padding-left:4px}

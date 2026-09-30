@@ -7,7 +7,7 @@ window.MONATSLAUF_CONFIG = {
 
   // Punkte pro Trainingsminute. Änderungen gelten sofort, auch rückwirkend für den laufenden Monat.
   factors: {
-    laufen: 4,
+    laufen: 4,     // Joggen
     bouldern: 1,
     klettern: 1,
     home: 2,       // Home-Training

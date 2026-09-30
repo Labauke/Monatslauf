@@ -2,7 +2,7 @@
 const CFG = window.MONATSLAUF_CONFIG || {};
 const FACTORS = { laufen: 4, bouldern: 1, klettern: 1, home: 2, fahrrad: 0.8, yoga: 1, anderes: 1, ...(CFG.factors || {}) };
 const SPORTS = [
-  { id: 'laufen',   label: 'Laufen',        color: '#F0643A', pose: 'run' },
+  { id: 'laufen',   label: 'Joggen',        color: '#F0643A', pose: 'run' },
   { id: 'bouldern', label: 'Bouldern',      color: '#9B5DE5', pose: 'climb' },
   { id: 'klettern', label: 'Klettern',      color: '#1FAE8C', pose: 'climb' },
   { id: 'home',     label: 'Home-Training', color: '#E23E6B', pose: 'workout' },
@@ -142,7 +142,12 @@ function checkOvertake() {
 
 /* ---------- Rendern ---------- */
 let entryInView = true;
-function render() { renderWho(); renderMonth(); renderCeremony(); renderTrack(); renderEntry(); renderFeed(); renderHall(); updateFab(); }
+function render() {
+  // Ohne Anmeldung nur den aktuellen Stand und „Mitmachen“ zeigen
+  const guest = S.loaded.players && !S.players[S.me];
+  document.body.classList.toggle('guest', guest);
+  if (guest) S.view = current();
+  renderWho(); renderMonth(); renderCeremony(); renderTrack(); renderEntry(); renderFeed(); renderHall(); updateFab(); }
 function updateFab() {
   const fab = $('#fab');
   fab.textContent = S.players[S.me] ? (S.edit ? 'Zur Figur' : '+ Training eintragen') : 'Mitmachen';
@@ -350,7 +355,7 @@ function handleWriteError(e) {
 const AREAS = [['figur', 'Figur', ['base', 'skin']], ['kopf', 'Kopf', ['hair', 'beard', 'glasses', 'hat']], ['outfit', 'Outfit', ['jersey', 'shoes', 'extra']]];
 const SUB = { base: 'Grundfigur', skin: 'Hautfarbe', hair: 'Frisur', beard: 'Bart', glasses: 'Brille', hat: 'Hut', jersey: 'Trikot', shoes: 'Schuhe', extra: 'Zubehör', hairColor: 'Haarfarbe' };
 const HUMAN_ONLY = ['skin', 'hair', 'beard'];
-const PREVIEW_POSES = [['cheer', 'Jubeln'], ['run', 'Laufen'], ['climb', 'Klettern'], ['workout', 'Training'], ['bike', 'Fahrrad'], ['yoga', 'Yoga']];
+const PREVIEW_POSES = [['cheer', 'Jubeln'], ['run', 'Joggen'], ['climb', 'Klettern'], ['workout', 'Training'], ['bike', 'Fahrrad'], ['yoga', 'Yoga']];
 // Farbnamen in derselben Reihenfolge wie die Listen in js/figure.js
 const COLORS = { skin: SKINS, hairColor: HAIR_COLORS, jersey: JERSEYS };
 const COLOR_NAMES = {
@@ -644,12 +649,31 @@ else entryInView = false;
   let deferred = null;
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; $('#installBtn').hidden = false; });
   addEventListener('appinstalled', () => { $('#installBtn').hidden = true; toast('Monatslauf ist installiert'); });
-  $('#installBtn').onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; $('#installBtn').hidden = true; };
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  $('#iosHint').hidden = !(ios && !standalone);
+  // iPads melden sich als Mac, erkennbar am Touch-Bildschirm
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // iOS kennt keine Installations-Abfrage: Der Knopf zeigt dort eine Anleitung
+  if (ios && !standalone) $('#installBtn').hidden = false;
+  $('#installBtn').onclick = async () => {
+    if (deferred) { deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; $('#installBtn').hidden = true; return; }
+    if (ios) iosInstallHelp();
+  };
   if (standalone) $('#inviteCard h3').textContent = 'Leute einladen';
 })();
+function iosInstallHelp() {
+  const dlg = $('#installDlg');
+  dlg.innerHTML = `<form method="dialog">
+    <h3 id="installTitle">Als App installieren</h3>
+    <ol class="steps">
+      <li><b>Teilen</b> antippen: das Viereck mit dem Pfeil nach oben, in Safari unten in der Leiste (auf dem iPad oben).</li>
+      <li>Nach unten scrollen und <b>Zum Home-Bildschirm</b> wählen.</li>
+      <li>Oben rechts auf <b>Hinzufügen</b> tippen.</li>
+    </ol>
+    <p class="summary">Danach startet der Monatslauf wie eine App vom Home-Bildschirm. Klappt es nicht, öffne die Seite in Safari.</p>
+    <div class="row-btns"><button class="primary" value="ok">Verstanden</button></div>
+  </form>`;
+  dlg.showModal();
+}
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 /* ---------- Start ---------- */
