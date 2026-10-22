@@ -9,6 +9,7 @@ Punkte = Minuten × Faktor der Sportart.
 | Sportart       | Faktor |
 |----------------|-------:|
 | Joggen         | 4      |
+| Squash         | 4      |
 | Home-Training  | 2      |
 | Klettern       | 1      |
 | Bouldern       | 1      |

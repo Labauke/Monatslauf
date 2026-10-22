@@ -13,8 +13,8 @@ const SECRET = Deno.env.get('PUSH_SECRET');
 webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') || 'mailto:monatslauf@example.com', Deno.env.get('VAPID_PUBLIC_KEY'), Deno.env.get('VAPID_PRIVATE_KEY'));
 
 // Muss zu js/config.js und js/app.js passen
-const FACTORS = { laufen: 4, bouldern: 1, klettern: 1, home: 2, workout: 2, fahrrad: 0.8, yoga: 1, anderes: 1 };
-const LABELS = { laufen: 'Joggen', bouldern: 'Bouldern', klettern: 'Klettern', home: 'Home-Training', workout: 'Home-Training', fahrrad: 'Fahrrad', yoga: 'Yoga', anderes: 'Anderes' };
+const FACTORS = { laufen: 4, squash: 4, bouldern: 1, klettern: 1, home: 2, workout: 2, fahrrad: 0.8, yoga: 1, anderes: 1 };
+const LABELS = { laufen: 'Joggen', squash: 'Squash', bouldern: 'Bouldern', klettern: 'Klettern', home: 'Home-Training', workout: 'Home-Training', fahrrad: 'Fahrrad', yoga: 'Yoga', anderes: 'Anderes' };
 const DEFAULT_PREFS = { overtake: true, deadline: true, reminder: true, entries: false };
 
 const pointsOf = e => Math.round(e.minutes * (FACTORS[e.sport] ?? 1));

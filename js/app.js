@@ -1,8 +1,9 @@
 /* Monatslauf – App */
 const CFG = window.MONATSLAUF_CONFIG || {};
-const FACTORS = { laufen: 4, bouldern: 1, klettern: 1, home: 2, fahrrad: 0.8, yoga: 1, anderes: 1, ...(CFG.factors || {}) };
+const FACTORS = { laufen: 4, squash: 4, bouldern: 1, klettern: 1, home: 2, fahrrad: 0.8, yoga: 1, anderes: 1, ...(CFG.factors || {}) };
 const SPORTS = [
   { id: 'laufen',   label: 'Joggen',        color: '#F0643A', pose: 'run' },
+  { id: 'squash',   label: 'Squash',        color: '#7CB518', pose: 'run' },
   { id: 'bouldern', label: 'Bouldern',      color: '#9B5DE5', pose: 'climb' },
   { id: 'klettern', label: 'Klettern',      color: '#1FAE8C', pose: 'climb' },
   { id: 'home',     label: 'Home-Training', color: '#E23E6B', pose: 'workout' },
